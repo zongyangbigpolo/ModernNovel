@@ -2,7 +2,7 @@
 
 ModernNovel 是一个面向长篇小说创作的开源 AI 写作工作台。它把项目、章节、人物、地点、世界观、情节画布和 AI 助手放在同一个 Workspace 中，并允许每位用户使用自己的模型 API Key 或本地 Ollama。
 
-> 当前项目处于 POC 阶段。核心写作、AI Provider、Workspace、成员角色和超级管理员能力已经可用，但实时协作、Writer Skill 导入和 DOCX/EPUB 导出仍待实现。
+> 当前项目处于 POC 阶段。核心写作、AI Provider、项目级 Writer Skill、持久风格记忆、Workspace、成员角色和超级管理员能力已经可用，但实时协作和 DOCX/EPUB 导出仍待实现。
 
 ![从故事构想到可编辑情节图](.github/story-map-demo.gif)
 
@@ -13,6 +13,8 @@ ModernNovel 是一个面向长篇小说创作的开源 AI 写作工作台。它�
 - Story Canvas：从故事前提扩展为幕、章节、场景节点，并可提升为正式章节。
 - Codex：管理人物、地点、世界观资料和情节点。
 - AI 写作助手：读取当前项目标题、类型、题材、简介和人物信息作为上下文。
+- Writer Skills：为整本小说启用可复用写作方法，支持 Markdown/JSON 导入。
+- 持久风格记忆：从已有章节提炼叙述声音、节奏、视角、对话、意象和禁忌项。
 - 自带模型密钥：支持 OpenRouter、OpenAI、Anthropic、Groq、Gemini、Cohere。
 - Ollama：本地开发时可以直接连接本机模型。
 - Workspace：成员邀请、owner/admin/member 角色、活动 Workspace 切换。
@@ -198,68 +200,76 @@ ModernNovel 通过 Ollama 的 OpenAI-compatible `/v1/chat/completions` 接口调
 
 ## Writer Skill 与中文写作技巧
 
-### 当前状态
+### 使用方式
 
-当前版本还没有可从网页导入的 Writer Skill、提示词包或作家风格库。
-
-AI 系统提示词目前定义在：
+打开小说后进入：
 
 ```text
-apps/server/src/routers/ai.ts
+Project → Settings → Writer Skills
 ```
 
-`buildSystemPrompt()` 会自动附加：
+在这里可以：
 
-- 项目标题与类型。
-- 题材。
-- 项目简介，最多 500 字符。
-- 最多 20 位人物及其简介。
+- 启用或停用内置 Skill。
+- 导入自己的 Markdown/JSON Skill；导入后自动绑定并启用到当前小说。
+- 删除自己创建的 Skill。
+- 点击 **Learn from manuscript**，从当前小说章节生成持久风格档案。
 
-因此，现在临时加入写作技巧有三种方式：
+Skill 与风格档案都存入 D1，并通过 `project_id` 绑定小说。关闭浏览器、退出登录或中断几个月后再次写作，后续 AI 对话仍会自动加载同一组规则和风格记忆。
 
-1. 在每次 AI 对话中直接说明要求，最安全也最灵活。
-2. 把简短的项目级写作规范放入项目简介，但只有前 500 字符会进入 AI 上下文。
-3. 开发阶段修改 `BASE_SYSTEM_PROMPT`，这会影响所有用户和全部项目，不适合多用户部署。
+### 三套内置 Skill
 
-### 推荐的 Skill 实现方案
+内置内容是原创规则，没有复制第三方提示词或小说原文，只借鉴了 MIT 项目的抽象工作流：
 
-后续建议新增独立的 `writer_skill`，而不是继续扩大固定系统提示词：
+| Skill | 用途 | 灵感来源 |
+| --- | --- | --- |
+| Character Interaction Dynamics | 从人物欲望、压力点与互补关系组织场景冲突 | [Fabric](https://github.com/danielmiessler/Fabric)，MIT |
+| Parameterized Prose Practice | 固定 POV/时态并进行视角、动作和语言泄漏检查 | [Writingway](https://github.com/a-omukai/Writingway)，MIT |
+| Stateful Chapter Continuity | 维护章节间人物、地点、物件、承诺和未解决线索状态 | [gptauthor](https://github.com/dylanhogg/gptauthor)，MIT |
 
-```text
-writer_skill
-├─ id
-├─ owner_id / organization_id
-├─ name
-├─ language
-├─ description
-├─ instructions
-├─ examples
-├─ source
-├─ is_active
-└─ created_at / updated_at
-```
+来源 URL、许可证说明和版权归属会随 Skill 一起显示。
 
-同时增加：
+### 导入 Markdown
 
-- **AI Models → Writer Skills**：创建、编辑、导入和启用技巧包。
-- 项目设置中的 Skill 多选。
-- JSON/Markdown 导入预览。
-- Prompt 长度限制和内容清洗。
-- Skill 优先级：平台基础规则 → Workspace Skill → 项目 Skill → 当前用户要求。
-- 只把当前项目启用的 Skill 合并进 `buildSystemPrompt()`。
-
-推荐导入的是抽象、可执行的写作方法，例如：
+一级标题和 `Instructions` 必填：
 
 ```markdown
 # 中文悬疑节奏
 
-- 每个场景先明确人物目标、阻力和信息增量。
-- 线索首次出现时保持自然，后续至少产生一次错误解释。
-- 章节结尾优先留下未完成动作、认知反转或代价升级。
-- 对话避免直接解释背景，让信息通过立场冲突显现。
+让线索、误导和代价升级贯穿整本小说。
+
+## Instructions
+每个场景明确人物目标、阻力和信息增量。线索首次出现时保持自然，
+后续至少产生一次合理但错误的解释。
+
+## Checklist
+- 章节是否带来新信息或改变旧信息的含义
+- 误导是否建立在角色认知而非作者隐瞒上
+- 结尾是否保留未完成动作、认知反转或代价升级
+
+## Examples
+- 用人物的错误判断产生误导，而不是省略其已经知道的事实
+
+## Source
+- URL: https://example.com/your-authorized-source
+- License: CC-BY-4.0
 ```
 
-不建议直接导入整本小说、长篇原文或要求模型复刻某位在世作家的独特文风。更适合把资料整理成通用技巧、结构规则、自检清单和少量自有示例，并记录来源及授权状态。
+JSON 格式支持 `name`、`description`、`instructions`、`checklist`、`examples`、`sourceUrl` 和 `sourceLicense`。单个导入文件上限 20KB；服务端会删除 HTML 和控制字符，并限制字段、列表和注入 Prompt 的长度。
+
+不建议导入整本小说、长篇原文或要求模型复刻某位在世作家的独特文风。更适合把资料整理成通用技巧、结构规则、自检清单和少量自有示例，并记录来源及授权状态。
+
+### 持久学习机制
+
+风格学习借鉴 [Hermes Agent](https://github.com/NousResearch/hermes-agent)（MIT）的“持久记忆 + 每轮上下文注入”思路，但使用面向小说项目的 D1 实现：
+
+1. 从当前项目最多 20 章中提取有界样本，每章最多 4,000 字符，总计最多 16,000 字符。
+2. 使用当前用户已经配置的 AI Provider 生成严格结构化风格档案。
+3. 验证并持久化声音、句式节奏、视角/时态、对话、意象、节奏和避免项。
+4. 每次项目 AI 对话前，按确定顺序注入项目资料、已启用 Skill 和风格记忆。
+5. 保存来源章节、字数、模型、Provider 和版本，方便知道记忆从何而来。
+
+学习需要至少 200 字符的小说正文以及一个可用 AI Provider。为避免在自动保存时产生不可控模型费用，当前由用户手动点击学习；小说风格发生明显变化后可以再次运行，系统会更新同一份项目记忆。
 
 ## Cloudflare 部署
 
@@ -361,7 +371,8 @@ ModernNovel/
 
 ## 当前限制
 
-- 没有 Writer Skill 导入与项目级提示词管理。
+- Writer Skill 当前只支持项目级绑定，尚无 Workspace 级共享库和语义检索。
+- 风格记忆由用户手动刷新，尚未自动检测章节风格漂移。
 - 网页端尚无通用模型选择器、温度和最大 Token 配置。
 - Ollama 生产部署需要可由 Worker 访问的安全 HTTPS 网关。
 - 团队成员可以共享 Workspace，但实时多人编辑尚未实现。

@@ -162,3 +162,61 @@ export const verifyProjectAccess = async (
 
   await next()
 }
+
+// Middleware to require project-mutation privileges: the project's own
+// owner, or a workspace member with the "owner" or "admin" organization
+// role. Run this *after* `verifyProjectAccess` (which already confirmed the
+// project belongs to the active organization) on any route where regular
+// members should be able to view but not change project-wide settings —
+// e.g. writer skills/style memory.
+export const requireProjectMutationAccess = async (
+  c: Context<{ Bindings: Env; Variables: Variables }>,
+  next: () => Promise<void>
+) => {
+  if (
+    await hasProjectMutationAccess({
+      projectId: c.req.param("projectId"),
+      activeOrganization: c.get("activeOrganization"),
+      user: c.get("user"),
+    })
+  ) {
+    await next()
+    return
+  }
+
+  return c.json({ error: "Only the project owner or a workspace owner/admin can do this" }, 403)
+}
+
+export async function hasProjectMutationAccess(input: {
+  activeOrganization: Variables["activeOrganization"]
+  projectId: string | undefined
+  user: Variables["user"] | undefined
+}): Promise<boolean> {
+  const { projectId, activeOrganization, user } = input
+
+  if (!(projectId && activeOrganization && user)) {
+    return false
+  }
+
+  const projectData = await db
+    .select({ ownerId: project.ownerId })
+    .from(project)
+    .where(and(eq(project.id, projectId), eq(project.organizationId, activeOrganization.id)))
+    .get()
+
+  if (!projectData) {
+    return false
+  }
+
+  if (projectData.ownerId === user.id) {
+    return true
+  }
+
+  const membership = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.userId, user.id), eq(member.organizationId, activeOrganization.id)))
+    .get()
+
+  return membership?.role === "owner" || membership?.role === "admin"
+}

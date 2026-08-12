@@ -1,8 +1,21 @@
 import { and, asc, eq } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import { db } from "../db"
-import { aiProvider, character, project } from "../db/schema"
+import {
+  aiProvider,
+  character,
+  project,
+  projectStyleMemory,
+  projectWriterSkill,
+  writerSkill,
+} from "../db/schema"
 import { decryptApiKey } from "../lib/encryption"
+import {
+  formatSkillsForPrompt,
+  formatStyleMemoryForPrompt,
+  parseJsonStringArray,
+  parseStoredStyleProfile,
+} from "../lib/writer-skills"
 import { requireAuth } from "../middleware/auth"
 
 interface Env {
@@ -120,12 +133,33 @@ async function buildSystemPrompt(projectId: string | undefined, organizationId: 
     return BASE_SYSTEM_PROMPT
   }
 
-  const characters = await db
-    .select({ name: character.name, description: character.description })
-    .from(character)
-    .where(eq(character.projectId, projectId))
-    .orderBy(asc(character.name))
-    .limit(20)
+  const [characters, enabledSkills, styleMemory] = await Promise.all([
+    db
+      .select({ name: character.name, description: character.description })
+      .from(character)
+      .where(eq(character.projectId, projectId))
+      .orderBy(asc(character.name))
+      .limit(20),
+    // Deterministic order: explicit binding order first, then skill name, so
+    // the same set of enabled skills always renders identically in the
+    // prompt regardless of query/storage order.
+    db
+      .select({
+        name: writerSkill.name,
+        instructions: writerSkill.instructions,
+        checklist: writerSkill.checklist,
+        order: projectWriterSkill.order,
+      })
+      .from(projectWriterSkill)
+      .innerJoin(writerSkill, eq(projectWriterSkill.skillId, writerSkill.id))
+      .where(and(eq(projectWriterSkill.projectId, projectId), eq(projectWriterSkill.enabled, true)))
+      .orderBy(asc(projectWriterSkill.order), asc(writerSkill.name)),
+    db
+      .select({ profile: projectStyleMemory.profile })
+      .from(projectStyleMemory)
+      .where(eq(projectStyleMemory.projectId, projectId))
+      .get(),
+  ])
 
   const lines = [BASE_SYSTEM_PROMPT, "", "The writer is working on this project:"]
   lines.push(`- Title: ${projectData.title} (${projectData.type})`)
@@ -140,6 +174,27 @@ async function buildSystemPrompt(projectId: string | undefined, organizationId: 
     for (const char of characters) {
       const description = char.description ? ` — ${char.description.slice(0, 200)}` : ""
       lines.push(`  - ${char.name}${description}`)
+    }
+  }
+
+  if (enabledSkills.length > 0) {
+    lines.push("")
+    lines.push(
+      formatSkillsForPrompt(
+        enabledSkills.map((skill) => ({
+          name: skill.name,
+          instructions: skill.instructions,
+          checklist: parseJsonStringArray(skill.checklist),
+        }))
+      )
+    )
+  }
+
+  if (styleMemory) {
+    const profile = parseStoredStyleProfile(styleMemory.profile)
+    if (profile) {
+      lines.push("")
+      lines.push(formatStyleMemoryForPrompt(profile))
     }
   }
 
@@ -443,4 +498,4 @@ aiRouter.post("/chat", requireAuth, async (c: AppContext) => {
 })
 
 export type { ChatMessage, CompletionResult }
-export { aiRouter, isCompletionFailure, runCompletionForUser }
+export { aiRouter, buildSystemPrompt, isCompletionFailure, runCompletionForUser }

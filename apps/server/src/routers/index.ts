@@ -8,6 +8,7 @@ import { aiRouter } from "./ai"
 import { aiProvidersRouter } from "./ai-providers"
 import { contentRouter } from "./content"
 import graphRouter from "./graph"
+import { writerSkillsRouter } from "./writer-skills"
 
 interface Env {
   BETTER_AUTH_SECRET: string
@@ -993,6 +994,9 @@ router.route("/", contentRouter)
 
 // Mount graph router
 router.route("/", graphRouter)
+
+// Mount writer skills + project style memory router
+router.route("/", writerSkillsRouter)
 
 // Mount superadmin-only router (list users/workspaces, enable/disable users)
 router.route("/admin", adminRouter)

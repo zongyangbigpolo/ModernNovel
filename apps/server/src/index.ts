@@ -4,6 +4,7 @@ import { logger } from "hono/logger"
 import { getAuth } from "./lib/auth"
 import { ensureSuperadminBootstrap } from "./lib/bootstrap-admin"
 import { openApiApp } from "./lib/openapi"
+import { ensureBuiltInWriterSkills } from "./lib/writer-skills-bootstrap"
 import { apiRouter } from "./routers"
 import { runScheduledJobs } from "./scheduled"
 // Import route definitions to register them
@@ -62,6 +63,7 @@ app.get("/health", (c) =>
 // it fails — bootstrap issues never take the app down.
 app.use("*", async (c, next) => {
   await ensureSuperadminBootstrap(c.env)
+  await ensureBuiltInWriterSkills()
   await next()
 })
 
