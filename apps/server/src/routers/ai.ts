@@ -70,7 +70,7 @@ const OLLAMA_DEFAULT_URL = "http://localhost:11434"
 const OLLAMA_DEFAULT_MODEL = "llama3.2"
 const TRAILING_SLASH_PATTERN = /\/$/
 
-const BASE_SYSTEM_PROMPT = `You are a thoughtful writing assistant for fiction writers using OpenWrite.
+const BASE_SYSTEM_PROMPT = `You are a thoughtful writing assistant for fiction writers using ModernNovel.
 Help with character development, plot structure, pacing, dialogue, world-building, and prose style.
 Be specific and constructive. Keep responses concise enough to read in a sidebar — prefer a few focused paragraphs or a short list over an essay.
 When the writer asks for prose (a rewrite, a continuation, a description), provide it directly so it can be inserted into their manuscript.`
@@ -294,7 +294,10 @@ async function dispatchToProvider(options: {
   const model = options.model || endpoint.defaultModel
   const extraHeaders =
     provider === "openrouter"
-      ? { "HTTP-Referer": "https://github.com/ilrein/openwrite", "X-Title": "OpenWrite" }
+      ? {
+          "HTTP-Referer": "https://github.com/zongyangbigpolo/ModernNovel",
+          "X-Title": "ModernNovel",
+        }
       : undefined
 
   return {

@@ -1,10 +1,10 @@
 # AI Providers API
 
-The AI Providers API allows users to securely connect and manage multiple AI service providers (OpenRouter, OpenAI, Anthropic, etc.) for use within OpenWrite's AI-powered writing features.
+The AI Providers API allows users to securely connect and manage multiple AI service providers (OpenRouter, OpenAI, Anthropic, etc.) for use within ModernNovel's AI-powered writing features.
 
 ## Overview
 
-OpenWrite supports multiple AI providers to give users flexibility in choosing their preferred AI models and pricing. The system includes:
+ModernNovel supports multiple AI providers to give users flexibility in choosing their preferred AI models and pricing. The system includes:
 
 - **Secure API key storage** - Keys are encrypted and linked to user accounts
 - **OAuth integration** - Seamless connection flows (starting with OpenRouter PKCE)
@@ -17,12 +17,12 @@ OpenWrite supports multiple AI providers to give users flexibility in choosing t
 | Provider | Connection Method | Status | Models Available |
 |----------|-------------------|--------|-----------------|
 | OpenRouter | OAuth PKCE | ✅ Active | 200+ models from multiple providers |
-| OpenAI | API Key | 🔄 Planned | GPT-4, GPT-3.5, DALL-E |
-| Anthropic | API Key | 🔄 Planned | Claude 3.5, Claude 3 |
-| Ollama | Direct Connection | 🔄 Planned | Local models |
-| Groq | API Key | 🔄 Planned | Fast inference models |
-| Google | API Key | 🔄 Planned | Gemini models |
-| Cohere | API Key | 🔄 Planned | Command models |
+| OpenAI | API Key | ✅ Active | OpenAI chat models |
+| Anthropic | API Key | ✅ Active | Claude chat models |
+| Ollama | Direct Connection | ✅ Active | Local OpenAI-compatible models |
+| Groq | API Key | ✅ Active | Groq-hosted chat models |
+| Google | API Key | ✅ Active | Gemini models |
+| Cohere | API Key | ✅ Active | Command models |
 
 ## Database Schema
 
