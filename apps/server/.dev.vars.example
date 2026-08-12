@@ -1,0 +1,32 @@
+# ModernNovel Server Environment Variables
+# Copy this file to .dev.vars and fill in your actual values
+
+# CORS origin for the web application
+CORS_ORIGIN="http://localhost:3001"
+
+# Better Auth Configuration - REQUIRED
+BETTER_AUTH_SECRET="your-secret-key-here-change-this-in-production"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# Environment mode
+NODE_ENV="development"
+
+# Encryption key for AI provider API keys stored in the database - REQUIRED
+# Generate with: openssl rand -base64 32
+ENCRYPTION_KEY="generate-a-base64-32-byte-key"
+
+# NOTE: AI Provider API keys are NOT configured here!
+# They are configured through the web application UI at:
+# Dashboard → AI Providers
+# 
+# The keys are securely encrypted and stored in the database.
+# This approach provides better security and user management.
+
+# Superadmin bootstrap (optional, local dev only).
+# When both are set, the server idempotently provisions/promotes this exact
+# account to the "superadmin" role on startup. ADMIN_EMAIL must match the
+# fixed superadmin address (zongyangpolo@gmail.com) — anything else is
+# ignored. Never commit a real password here; in production this is set via
+# `wrangler secret put ADMIN_PASSWORD` instead of wrangler.jsonc `vars`.
+ADMIN_EMAIL="zongyangpolo@gmail.com"
+ADMIN_PASSWORD="choose-a-strong-local-dev-password"

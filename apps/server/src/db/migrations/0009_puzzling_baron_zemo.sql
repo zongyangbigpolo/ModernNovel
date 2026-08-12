@@ -1,0 +1,27 @@
+CREATE INDEX `account_user_id_idx` ON `account` (`user_id`);--> statement-breakpoint
+CREATE INDEX `session_user_id_idx` ON `session` (`user_id`);--> statement-breakpoint
+CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);--> statement-breakpoint
+CREATE INDEX `sent_email_user_type_idx` ON `sent_email` (`user_id`,`type`);--> statement-breakpoint
+CREATE INDEX `invitation_email_idx` ON `invitation` (`email`);--> statement-breakpoint
+CREATE INDEX `invitation_organization_id_idx` ON `invitation` (`organization_id`);--> statement-breakpoint
+CREATE INDEX `member_user_id_idx` ON `member` (`user_id`);--> statement-breakpoint
+CREATE INDEX `member_organization_id_idx` ON `member` (`organization_id`);--> statement-breakpoint
+CREATE INDEX `team_organization_id_idx` ON `team` (`organization_id`);--> statement-breakpoint
+CREATE INDEX `team_member_team_id_idx` ON `team_member` (`team_id`);--> statement-breakpoint
+CREATE INDEX `team_member_user_id_idx` ON `team_member` (`user_id`);--> statement-breakpoint
+CREATE INDEX `chapter_work_id_idx` ON `chapter` (`work_id`);--> statement-breakpoint
+CREATE INDEX `character_project_id_idx` ON `character` (`project_id`);--> statement-breakpoint
+CREATE INDEX `character_work_id_idx` ON `character` (`work_id`);--> statement-breakpoint
+CREATE INDEX `location_project_id_idx` ON `location` (`project_id`);--> statement-breakpoint
+CREATE INDEX `location_work_id_idx` ON `location` (`work_id`);--> statement-breakpoint
+CREATE INDEX `lore_project_id_idx` ON `lore` (`project_id`);--> statement-breakpoint
+CREATE INDEX `lore_work_id_idx` ON `lore` (`work_id`);--> statement-breakpoint
+CREATE INDEX `plot_point_project_id_idx` ON `plot_point` (`project_id`);--> statement-breakpoint
+CREATE INDEX `plot_point_work_id_idx` ON `plot_point` (`work_id`);--> statement-breakpoint
+CREATE INDEX `project_owner_id_idx` ON `project` (`owner_id`);--> statement-breakpoint
+CREATE INDEX `project_organization_id_idx` ON `project` (`organization_id`);--> statement-breakpoint
+CREATE INDEX `project_collaborator_project_id_idx` ON `project_collaborator` (`project_id`);--> statement-breakpoint
+CREATE INDEX `project_collaborator_user_id_idx` ON `project_collaborator` (`user_id`);--> statement-breakpoint
+CREATE INDEX `work_project_id_idx` ON `work` (`project_id`);--> statement-breakpoint
+CREATE INDEX `writing_session_project_id_idx` ON `writing_session` (`project_id`);--> statement-breakpoint
+CREATE INDEX `writing_session_user_id_idx` ON `writing_session` (`user_id`);

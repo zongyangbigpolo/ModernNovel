@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f1a"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- subtle grid dots -->
+  <g fill="#1f2937">
+    <circle cx="120" cy="120" r="3"/><circle cx="220" cy="120" r="3"/><circle cx="320" cy="120" r="3"/>
+    <circle cx="1080" cy="520" r="3"/><circle cx="980" cy="520" r="3"/><circle cx="880" cy="520" r="3"/>
+  </g>
+
+  <!-- accent bar -->
+  <rect x="100" y="250" width="84" height="8" rx="4" fill="url(#accent)"/>
+
+  <text x="100" y="360" font-family="'Helvetica Neue', Arial, sans-serif" font-size="96" font-weight="700" fill="#f9fafb">ModernNovel</text>
+
+  <text x="104" y="430" font-family="'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="400" fill="#9ca3af">The open-source, AI-powered writing platform</text>
+
+  <text x="104" y="538" font-family="'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="500" fill="#6b7280">Write with clarity</text>
+
+  <!-- pen-nib mark -->
+  <g transform="translate(980,180)" fill="none" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 120 L80 40 L120 80 L40 160 Z"/>
+    <path d="M40 160 L0 120"/>
+    <circle cx="60" cy="100" r="10" fill="url(#accent)" stroke="none"/>
+  </g>
+</svg>
