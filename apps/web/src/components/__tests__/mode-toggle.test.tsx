@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import type React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { I18nProvider } from "@/lib/i18n"
 import { ModeToggle } from "../mode-toggle"
 import { useTheme } from "../theme-provider"
+
+function renderModeToggle() {
+  return render(
+    <I18nProvider>
+      <ModeToggle />
+    </I18nProvider>
+  )
+}
 
 // Mock the theme provider
 vi.mock("../theme-provider", () => ({
@@ -46,13 +55,13 @@ describe("ModeToggle", () => {
   })
 
   it("should render theme toggle button", () => {
-    render(<ModeToggle />)
+    renderModeToggle()
 
     expect(screen.getByRole("button", { name: TOGGLE_THEME_REGEX })).toBeInTheDocument()
   })
 
   it("should render all theme options", () => {
-    render(<ModeToggle />)
+    renderModeToggle()
 
     expect(screen.getByText("Light")).toBeInTheDocument()
     expect(screen.getByText("Dark")).toBeInTheDocument()
@@ -64,7 +73,7 @@ describe("ModeToggle", () => {
     ["Dark", "dark"],
     ["System", "system"],
   ])("should call setTheme with correct value for %s theme", (themeName, themeValue) => {
-    render(<ModeToggle />)
+    renderModeToggle()
 
     fireEvent.click(screen.getByText(themeName))
     expect(mockSetTheme).toHaveBeenCalledWith(themeValue)

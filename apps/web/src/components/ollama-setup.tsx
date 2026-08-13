@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { useI18n } from "@/lib/i18n"
 
 type ConnectionMethod = "ngrok" | "cloudflare" | "manual"
 
@@ -25,21 +26,27 @@ interface SetupStep {
 
 interface OllamaSetupProps {
   loading?: boolean
-  onConnect: (config: { apiUrl: string; connectionMethod: ConnectionMethod }) => void
+  onConnect: (config: {
+    apiUrl: string
+    connectionMethod: ConnectionMethod
+    defaultModel: string
+  }) => void
 }
 
 export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
+  const { t } = useI18n()
   const [connectionMethod, setConnectionMethod] = useState<ConnectionMethod>("ngrok")
   const [apiUrl, setApiUrl] = useState("")
+  const [defaultModel, setDefaultModel] = useState("qwen3")
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle")
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      toast.success("Copied to clipboard!")
+      toast.success(t("ai.ollama.copySuccess"))
     } catch {
-      toast.error("Could not copy to clipboard.")
+      toast.error(t("ai.ollama.copyError"))
     }
   }
 
@@ -52,7 +59,6 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
     setConnectionStatus("idle")
 
     try {
-      // Test the connection by hitting the /api/tags endpoint
       const testUrl = new URL("/api/tags", apiUrl).toString()
 
       const response = await fetch(testUrl, {
@@ -64,14 +70,22 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
 
       if (response.ok) {
         setConnectionStatus("success")
-        toast.success("Connection successful!")
+        toast.success(t("ai.ollama.connectionSuccessToast"))
       } else {
         setConnectionStatus("error")
-        toast.error(`Connection failed: ${response.status} ${response.statusText}`)
+        toast.error(
+          t("ai.ollama.connectionFailedToast", {
+            message: `${response.status} ${response.statusText}`,
+          })
+        )
       }
     } catch (error) {
       setConnectionStatus("error")
-      toast.error(`Connection failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+      toast.error(
+        t("ai.ollama.connectionFailedToast", {
+          message: error instanceof Error ? error.message : t("ai.settings.unknownError"),
+        })
+      )
     } finally {
       setTestingConnection(false)
     }
@@ -81,7 +95,7 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
     if (!apiUrl) {
       return
     }
-    onConnect({ apiUrl, connectionMethod })
+    onConnect({ apiUrl, connectionMethod, defaultModel })
   }
 
   const setupGuides: Record<
@@ -89,61 +103,59 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
     { title: string; description: string; steps: SetupStep[] }
   > = {
     ngrok: {
-      title: "Ngrok Setup (Recommended)",
-      description: "Quick setup with temporary or persistent URLs",
+      title: t("ai.ollama.guides.ngrok.title"),
+      description: t("ai.ollama.guides.ngrok.description"),
       steps: [
         {
-          title: "Install ngrok",
-          content: "Download and install ngrok from https://ngrok.com/",
+          title: t("ai.ollama.guides.ngrok.steps.install.title"),
+          content: t("ai.ollama.guides.ngrok.steps.install.content"),
         },
         {
-          title: "Start Ollama",
-          content: "Make sure Ollama is running locally on port 11434",
+          title: t("ai.ollama.guides.ngrok.steps.start.title"),
+          content: t("ai.ollama.guides.ngrok.steps.start.content"),
         },
         {
-          title: "Create tunnel",
+          title: t("ai.ollama.guides.ngrok.steps.tunnel.title"),
           content: 'ngrok http 11434 --host-header="localhost:11434"',
           copyable: true,
         },
         {
-          title: "Copy URL",
-          content: "Copy the HTTPS forwarding URL (e.g., https://abc123.ngrok.app)",
+          title: t("ai.ollama.guides.ngrok.steps.copy.title"),
+          content: t("ai.ollama.guides.ngrok.steps.copy.content"),
         },
       ],
     },
     cloudflare: {
-      title: "Cloudflare Tunnel Setup",
-      description: "Free persistent tunnels with better integration",
+      title: t("ai.ollama.guides.cloudflare.title"),
+      description: t("ai.ollama.guides.cloudflare.description"),
       steps: [
         {
-          title: "Install cloudflared",
-          content:
-            "Download from https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/",
+          title: t("ai.ollama.guides.cloudflare.steps.install.title"),
+          content: t("ai.ollama.guides.cloudflare.steps.install.content"),
         },
         {
-          title: "Start Ollama",
-          content: "Make sure Ollama is running locally on port 11434",
+          title: t("ai.ollama.guides.cloudflare.steps.start.title"),
+          content: t("ai.ollama.guides.cloudflare.steps.start.content"),
         },
         {
-          title: "Create tunnel",
+          title: t("ai.ollama.guides.cloudflare.steps.tunnel.title"),
           content:
             'cloudflared tunnel --url http://localhost:11434 --http-host-header="localhost:11434"',
           copyable: true,
         },
         {
-          title: "Copy URL",
-          content: "Copy the HTTPS URL provided by cloudflared",
+          title: t("ai.ollama.guides.cloudflare.steps.copy.title"),
+          content: t("ai.ollama.guides.cloudflare.steps.copy.content"),
         },
       ],
     },
     manual: {
-      title: "Manual Configuration",
-      description: "Enter a custom Ollama API URL",
+      title: t("ai.ollama.guides.manual.title"),
+      description: t("ai.ollama.guides.manual.description"),
       steps: [
         {
-          title: "Custom Setup",
-          content:
-            "Enter your Ollama API URL directly (e.g., if running on a server or custom configuration)",
+          title: t("ai.ollama.guides.manual.steps.custom.title"),
+          content: t("ai.ollama.guides.manual.steps.custom.content"),
         },
       ],
     },
@@ -155,28 +167,28 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label className="font-medium text-base">Connection Method</Label>
+          <Label className="font-medium text-base">{t("ai.ollama.connectionMethodLabel")}</Label>
           <p className="text-muted-foreground text-sm">
-            Choose how to connect to your local Ollama instance
+            {t("ai.ollama.connectionMethodDescription")}
           </p>
           <Select
             onValueChange={(value) => setConnectionMethod(value as ConnectionMethod)}
             value={connectionMethod}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select connection method" />
+              <SelectValue placeholder={t("ai.ollama.connectionMethodPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ngrok">
                 <div className="flex items-center gap-2">
                   Ngrok
                   <Badge className="text-xs" variant="secondary">
-                    Recommended
+                    {t("ai.ollama.recommendedBadge")}
                   </Badge>
                 </div>
               </SelectItem>
-              <SelectItem value="cloudflare">Cloudflare Tunnel</SelectItem>
-              <SelectItem value="manual">Manual Configuration</SelectItem>
+              <SelectItem value="cloudflare">{t("ai.ollama.cloudflareOption")}</SelectItem>
+              <SelectItem value="manual">{t("ai.ollama.manualOption")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -190,7 +202,7 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
             <CardTitle className="flex items-center gap-2 text-lg">
               {currentGuide.title}
               <Badge className="text-xs" variant="outline">
-                Setup Guide
+                {t("ai.ollama.setupGuideBadge")}
               </Badge>
             </CardTitle>
             <p className="text-muted-foreground text-sm">{currentGuide.description}</p>
@@ -230,7 +242,9 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="apiUrl">
-            {connectionMethod === "manual" ? "Ollama API URL" : "Tunnel URL"}
+            {connectionMethod === "manual"
+              ? t("ai.ollama.apiUrlLabel")
+              : t("ai.ollama.tunnelUrlLabel")}
           </Label>
           <div className="flex gap-2">
             <Input
@@ -241,8 +255,8 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
               }}
               placeholder={
                 connectionMethod === "manual"
-                  ? "http://your-server:11434"
-                  : "https://abc123.ngrok.app"
+                  ? t("ai.ollama.manualPlaceholder")
+                  : t("ai.ollama.tunnelPlaceholder")
               }
               value={apiUrl}
             />
@@ -252,32 +266,47 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
               type="button"
               variant="outline"
             >
-              {testingConnection ? "Testing..." : "Test"}
+              {testingConnection ? t("ai.ollama.testing") : t("ai.ollama.test")}
             </Button>
           </div>
           {connectionStatus === "success" && (
             <div className="flex items-center gap-2 text-green-600 text-sm">
               <CheckCircle className="h-4 w-4" />
-              Connection successful
+              {t("ai.ollama.connectionSuccess")}
             </div>
           )}
           {connectionStatus === "error" && (
             <div className="flex items-center gap-2 text-red-600 text-sm">
               <AlertCircle className="h-4 w-4" />
-              Connection failed
+              {t("ai.ollama.connectionFailed")}
             </div>
           )}
-          <p className="text-muted-foreground text-sm">
-            Make sure your tunnel is running and paste the HTTPS URL here
-          </p>
+          <p className="text-muted-foreground text-sm">{t("ai.ollama.urlHint")}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ollamaModel">{t("ai.settings.defaultModelLabel")}</Label>
+          <Input
+            id="ollamaModel"
+            list="ollama-models"
+            onChange={(event) => setDefaultModel(event.target.value)}
+            placeholder="qwen3"
+            value={defaultModel}
+          />
+          <datalist id="ollama-models">
+            <option value="qwen3" />
+            <option value="deepseek-r1" />
+            <option value="llama3.2" />
+          </datalist>
+          <p className="text-muted-foreground text-sm">{t("ai.ollama.modelHint")}</p>
         </div>
 
         <div className="flex gap-2 pt-4">
           <Button
-            disabled={!apiUrl || loading || connectionStatus === "error"}
+            disabled={!(apiUrl && defaultModel.trim()) || loading || connectionStatus === "error"}
             onClick={handleConnect}
           >
-            {loading ? "Connecting..." : "Connect Ollama"}
+            {loading ? t("ai.ollama.connecting") : t("ai.ollama.connectButton")}
           </Button>
           <Button
             onClick={() => window.open("https://ollama.com/download", "_blank")}
@@ -285,7 +314,7 @@ export function OllamaSetup({ onConnect, loading }: OllamaSetupProps) {
             variant="outline"
           >
             <ExternalLink className="mr-2 h-4 w-4" />
-            Download Ollama
+            {t("ai.ollama.downloadButton")}
           </Button>
         </div>
       </div>

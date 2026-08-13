@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { buildManuscriptMarkdown, manuscriptFilename } from "@/lib/export-markdown"
+import { useI18n } from "@/lib/i18n"
 
 function downloadTextFile(filename: string, text: string) {
   const blob = new Blob([text], { type: "text/markdown;charset=utf-8" })
@@ -24,13 +25,14 @@ interface ExportButtonProps {
 
 export function ExportButton({ projectId, projectTitle }: ExportButtonProps) {
   const [exporting, setExporting] = useState(false)
+  const { t } = useI18n()
 
   const handleExport = async () => {
     setExporting(true)
     try {
       const chapters = await api.chapters.list(projectId)
       if (chapters.length === 0) {
-        toast.error("There's nothing to export yet.")
+        toast.error(t("projects.export.empty"))
         return
       }
 
@@ -45,9 +47,13 @@ export function ExportButton({ projectId, projectTitle }: ExportButtonProps) {
         manuscriptFilename(projectTitle),
         buildManuscriptMarkdown(projectTitle, withContent)
       )
-      toast.success("Manuscript exported as Markdown")
+      toast.success(t("projects.export.success"))
     } catch (error) {
-      toast.error(`Export failed: ${error instanceof Error ? error.message : "unknown error"}`)
+      toast.error(
+        t("projects.export.failed", {
+          message: error instanceof Error ? error.message : t("projects.export.unknownError"),
+        })
+      )
     } finally {
       setExporting(false)
     }
@@ -63,7 +69,7 @@ export function ExportButton({ projectId, projectTitle }: ExportButtonProps) {
       variant="outline"
     >
       <Download className="h-4 w-4" />
-      {exporting ? "Exporting…" : "Export"}
+      {exporting ? t("projects.export.exporting") : t("projects.export.button")}
     </Button>
   )
 }

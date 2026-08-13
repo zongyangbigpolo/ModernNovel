@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 
 import { api, type Character, type Location } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface CodexModalProps {
   initialEntry?: string | null
@@ -44,6 +45,19 @@ interface CodexModalProps {
 
 type CodexEntry = Character | { id: string; name: string; description?: string }
 
+interface CodexTypeConfig {
+  collectionLabel: string
+  description: string
+  entries: CodexEntry[]
+  icon: typeof Users
+  label: string
+  roleLabel: string
+  singular: string
+  singularLower: string
+  title: string
+  titleLower: string
+}
+
 export default function CodexModal({
   isOpen,
   onClose,
@@ -51,6 +65,7 @@ export default function CodexModal({
   initialType = null,
   initialEntry = null,
 }: CodexModalProps) {
+  const { t } = useI18n()
   const [selectedType, setSelectedType] = useState(initialType || "characters")
   const [selectedEntry, setSelectedEntry] = useState<string | null>(initialEntry)
   const [searchTerm, setSearchTerm] = useState("")
@@ -96,6 +111,107 @@ export default function CodexModal({
     },
   })
 
+  const getTypeConfig = (typeParam: string): CodexTypeConfig => {
+    switch (typeParam) {
+      case "characters": {
+        const title = t("codex.types.characters.title")
+        const singular = t("codex.types.characters.singular")
+        return {
+          label: t("codex.types.characters.label"),
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.characters.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.characters.collection"),
+          roleLabel: t("codex.types.characters.role"),
+          icon: Users,
+          entries: characters,
+        }
+      }
+      case "locations": {
+        const title = t("codex.types.locations.title")
+        const singular = t("codex.types.locations.singular")
+        return {
+          label: t("codex.types.locations.label"),
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.locations.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.locations.collection"),
+          roleLabel: t("codex.types.locations.role"),
+          icon: MapPin,
+          entries: locations,
+        }
+      }
+      case "lore": {
+        const title = t("codex.types.lore.title")
+        const singular = t("codex.types.lore.singular")
+        return {
+          label: t("codex.types.lore.label"),
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.lore.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.lore.collection"),
+          roleLabel: t("codex.types.lore.role"),
+          icon: Scroll,
+          entries: loreEntries,
+        }
+      }
+      case "plot": {
+        const title = t("codex.types.plot.title")
+        const singular = t("codex.types.plot.singular")
+        return {
+          label: t("codex.types.plot.label"),
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.plot.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.plot.collection"),
+          roleLabel: t("codex.types.plot.role"),
+          icon: FileText,
+          entries: plotThreads,
+        }
+      }
+      case "notes": {
+        const title = t("codex.types.notes.title")
+        const singular = t("codex.types.notes.singular")
+        return {
+          label: t("codex.types.notes.label"),
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.notes.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.notes.collection"),
+          roleLabel: t("codex.types.notes.role"),
+          icon: Zap,
+          entries: notes,
+        }
+      }
+      default: {
+        const title = t("codex.types.unknown.title")
+        const singular = t("codex.types.unknown.singular")
+        return {
+          label: title,
+          title,
+          titleLower: title.toLowerCase(),
+          description: t("codex.types.unknown.description"),
+          singular,
+          singularLower: singular.toLowerCase(),
+          collectionLabel: t("codex.types.unknown.collection"),
+          roleLabel: t("codex.types.unknown.role"),
+          icon: FileText,
+          entries: [],
+        }
+      }
+    }
+  }
+
   // Update mutations
   const updateCharacterMutation = useMutation({
     mutationFn: async ({
@@ -110,11 +226,18 @@ export default function CodexModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["characters", projectId] })
-      toast.success("Character updated successfully!")
+      toast.success(
+        t("codex.modal.feedback.updated", { noun: t("codex.types.characters.singular") })
+      )
       setIsEditing(false)
     },
     onError: (error) => {
-      toast.error(`Failed to update character: ${error.message}`)
+      toast.error(
+        t("codex.modal.feedback.updateFailed", {
+          noun: t("codex.types.characters.singular").toLowerCase(),
+          message: error.message,
+        })
+      )
     },
   })
 
@@ -131,11 +254,18 @@ export default function CodexModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations", projectId] })
-      toast.success("Location updated successfully!")
+      toast.success(
+        t("codex.modal.feedback.updated", { noun: t("codex.types.locations.singular") })
+      )
       setIsEditing(false)
     },
     onError: (error) => {
-      toast.error(`Failed to update location: ${error.message}`)
+      toast.error(
+        t("codex.modal.feedback.updateFailed", {
+          noun: t("codex.types.locations.singular").toLowerCase(),
+          message: error.message,
+        })
+      )
     },
   })
 
@@ -144,71 +274,8 @@ export default function CodexModal({
   const plotThreads: Array<{ id: string; name: string; description: string }> = []
   const notes: Array<{ id: string; name: string; description: string }> = []
 
-  const getTypeConfig = (typeParam: string) => {
-    switch (typeParam) {
-      case "characters":
-        return {
-          title: "Characters",
-          description: "Manage your story's characters",
-          icon: Users,
-          entries: characters.map((char) => ({
-            ...char,
-            description: char.description || "No description available",
-          })),
-        }
-      case "locations":
-        return {
-          title: "Locations",
-          description: "Track your story's places and settings",
-          icon: MapPin,
-          entries: locations.map((location) => ({
-            ...location,
-            description: location.description || "No description available",
-          })),
-        }
-      case "lore":
-        return {
-          title: "Lore & World-building",
-          description: "Document your world's history and rules",
-          icon: Scroll,
-          entries: loreEntries.map((lore) => ({
-            ...lore,
-            description: lore.description || "No description available",
-          })),
-        }
-      case "plot":
-        return {
-          title: "Plot Threads",
-          description: "Track your story's narrative threads and arcs",
-          icon: FileText,
-          entries: plotThreads.map((plot) => ({
-            ...plot,
-            description: plot.description || "No description available",
-          })),
-        }
-      case "notes":
-        return {
-          title: "Notes & Ideas",
-          description: "Quick notes and ideas for your story",
-          icon: Zap,
-          entries: notes.map((note) => ({
-            ...note,
-            description: note.description || "No description available",
-          })),
-        }
-      default:
-        return {
-          title: "Codex",
-          description: "Manage your story elements",
-          icon: FileText,
-          entries: [],
-        }
-    }
-  }
-
   const config = getTypeConfig(selectedType)
   const IconComponent = config.icon
-
   const filteredEntries = config.entries.filter((entry) =>
     entry.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -250,7 +317,7 @@ export default function CodexModal({
 
   const selectedEntryData = getSelectedEntryData()
 
-  const getEntryIcon = (_entry: CodexEntry, type: string) => {
+  const getEntryIcon = (type: string) => {
     switch (type) {
       case "characters":
         return <Users className="h-4 w-4" />
@@ -267,32 +334,20 @@ export default function CodexModal({
     }
   }
 
-  const _getEntryTypeFromEntry = (entry: CodexEntry): string => {
-    // Since role and type fields are removed, we'll use generic labels
-    if ("appearance" in entry || "personality" in entry || "backstory" in entry) {
-      return "Character"
-    }
-    if ("parentLocationId" in entry || "image" in entry) {
-      return "Location"
-    }
-    return "Entry"
-  }
-
-  const getEntryRole = (_entry: CodexEntry, type: string): string => {
-    // Return generic role based on type since specific role/type fields are removed
+  const getEntryRole = (type: string): string => {
     switch (type) {
       case "characters":
-        return "Character"
+        return t("codex.types.characters.role")
       case "locations":
-        return "Location"
+        return t("codex.types.locations.role")
       case "lore":
-        return "Lore Entry"
+        return t("codex.types.lore.role")
       case "plot":
-        return "Plot Thread"
+        return t("codex.types.plot.role")
       case "notes":
-        return "Note"
+        return t("codex.types.notes.role")
       default:
-        return "Entry"
+        return t("codex.types.unknown.role")
     }
   }
 
@@ -304,18 +359,22 @@ export default function CodexModal({
           <div className="border-b p-4">
             <div className="flex items-center gap-3">
               <IconComponent className="h-5 w-5" />
-              <h3 className="font-semibold">Create New {selectedType.slice(0, -1)}</h3>
+              <h3 className="font-semibold">
+                {t("codex.modal.createPanel.title", { type: config.singular })}
+              </h3>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-6">
             <div className="text-center text-muted-foreground">
               <IconComponent className="mx-auto mb-4 h-16 w-16 opacity-20" />
-              <h3 className="mb-2 font-semibold">Create New {selectedType.slice(0, -1)}</h3>
+              <h3 className="mb-2 font-semibold">
+                {t("codex.modal.createPanel.title", { type: config.singular })}
+              </h3>
               <p className="mb-4 text-sm">
-                Creation forms for {selectedType} will be implemented here.
+                {t("codex.modal.createPanel.description", { type: config.collectionLabel })}
               </p>
               <p className="text-xs">
-                For now, use the sidebar "New" buttons to create {selectedType}.
+                {t("codex.modal.createPanel.hint", { type: config.collectionLabel })}
               </p>
             </div>
           </div>
@@ -328,45 +387,41 @@ export default function CodexModal({
         <div className="flex h-full flex-col">
           <div className="border-b p-4">
             <div className="flex items-center gap-3">
-              {getEntryIcon(selectedEntryData, selectedType)}
+              {getEntryIcon(selectedType)}
               <div>
                 <h3 className="font-semibold">{selectedEntryData.name}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {getEntryRole(selectedEntryData, selectedType)}
-                </p>
+                <p className="text-muted-foreground text-sm">{getEntryRole(selectedType)}</p>
               </div>
             </div>
           </div>
-
           <div className="flex-1 overflow-y-auto p-4">
             <Tabs className="w-full" defaultValue="overview">
               <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="connections">Connections</TabsTrigger>
+                <TabsTrigger value="overview">{t("codex.modal.tabs.overview")}</TabsTrigger>
+                <TabsTrigger value="details">{t("codex.modal.tabs.details")}</TabsTrigger>
+                <TabsTrigger value="connections">{t("codex.modal.tabs.connections")}</TabsTrigger>
               </TabsList>
 
               <TabsContent className="mt-6" value="overview">
                 <div className="space-y-6">
                   {isEditing ? (
-                    // Edit mode
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-name">Name</Label>
+                        <Label htmlFor="edit-name">{t("common.name")}</Label>
                         <Input
                           id="edit-name"
                           onChange={(e) => setEditName(e.target.value)}
-                          placeholder="Enter name..."
+                          placeholder={t("codex.modal.fields.enterName")}
                           value={editName}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="edit-description">Description</Label>
+                        <Label htmlFor="edit-description">{t("common.description")}</Label>
                         <Textarea
                           id="edit-description"
                           onChange={(e) => setEditDescription(e.target.value)}
-                          placeholder="Enter description..."
+                          placeholder={t("codex.modal.fields.enterDescription")}
                           rows={4}
                           value={editDescription}
                         />
@@ -403,11 +458,11 @@ export default function CodexModal({
                         >
                           <Save className="mr-2 h-4 w-4" />
                           {updateCharacterMutation.isPending || updateLocationMutation.isPending
-                            ? "Updating..."
-                            : "Update"}
+                            ? t("codex.modal.actions.updating")
+                            : t("codex.modal.actions.update")}
                         </Button>
                         <Button onClick={() => setIsEditing(false)} size="sm" variant="outline">
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                         <Button
                           onClick={() => {
@@ -421,16 +476,15 @@ export default function CodexModal({
                           variant="destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t("common.delete")}
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    // View mode
                     <div className="space-y-6">
                       <div>
                         <div className="mb-2 flex items-center justify-between">
-                          <h4 className="font-medium">Name</h4>
+                          <h4 className="font-medium">{t("common.name")}</h4>
                           <Button
                             onClick={() => {
                               setEditName(selectedEntryData.name)
@@ -440,16 +494,16 @@ export default function CodexModal({
                             size="sm"
                             variant="outline"
                           >
-                            Edit
+                            {t("common.edit")}
                           </Button>
                         </div>
                         <p className="text-muted-foreground text-sm">{selectedEntryData.name}</p>
                       </div>
 
                       <div>
-                        <h4 className="mb-2 font-medium">Description</h4>
+                        <h4 className="mb-2 font-medium">{t("common.description")}</h4>
                         <p className="text-muted-foreground text-sm leading-relaxed">
-                          {selectedEntryData.description || "No description available"}
+                          {selectedEntryData.description || t("codex.modal.noDescriptionAvailable")}
                         </p>
                       </div>
                     </div>
@@ -459,13 +513,11 @@ export default function CodexModal({
 
               <TabsContent className="mt-6" value="details">
                 <div className="space-y-6">
-                  {/* Character backstory and motivation fields removed - simplified to just name and description */}
-
                   {selectedType === "locations" && (
                     <div>
-                      <h4 className="mb-2 font-medium">Location Details</h4>
+                      <h4 className="mb-2 font-medium">{t("codex.modal.locationDetails")}</h4>
                       <p className="text-muted-foreground text-sm leading-relaxed">
-                        {selectedEntryData.description}
+                        {selectedEntryData.description || t("codex.modal.noDescriptionAvailable")}
                       </p>
                     </div>
                   )}
@@ -474,9 +526,9 @@ export default function CodexModal({
 
               <TabsContent className="mt-6" value="connections">
                 <div className="space-y-4">
-                  <h4 className="font-medium">Related Elements</h4>
+                  <h4 className="font-medium">{t("codex.modal.relatedElements")}</h4>
                   <p className="text-muted-foreground text-sm">
-                    Connections and relationships will be shown here.
+                    {t("codex.modal.connectionsPlaceholder")}
                   </p>
                 </div>
               </TabsContent>
@@ -492,7 +544,9 @@ export default function CodexModal({
           <IconComponent className="mx-auto mb-4 h-16 w-16 opacity-20" />
           <h3 className="mb-2 font-semibold">{config.title}</h3>
           <p className="mb-4 text-muted-foreground text-sm">{config.description}</p>
-          <Button onClick={handleCreateNew}>Create New {selectedType.slice(0, -1)}</Button>
+          <Button onClick={handleCreateNew}>
+            {t("codex.modal.createPanel.title", { type: config.singular })}
+          </Button>
         </div>
       </div>
     )
@@ -503,13 +557,12 @@ export default function CodexModal({
       <Dialog onOpenChange={handleClose} open={isOpen}>
         <DialogContent className="h-[90vh] max-w-[90vw] overflow-hidden p-0 lg:max-w-6xl">
           <div className="flex h-full">
-            {/* Left Sidebar - Type Selection */}
             <div className="flex w-64 flex-col border-r bg-muted/50">
               <div className="p-4">
                 <DialogHeader>
-                  <DialogTitle className="text-left">Codex</DialogTitle>
+                  <DialogTitle className="text-left">{t("codex.modal.title")}</DialogTitle>
                   <DialogDescription className="text-left">
-                    Manage your story elements
+                    {t("codex.modal.description")}
                   </DialogDescription>
                 </DialogHeader>
               </div>
@@ -519,19 +572,34 @@ export default function CodexModal({
                   {[
                     {
                       key: "characters",
-                      label: "Characters",
+                      label: t("codex.types.characters.label"),
                       icon: Users,
                       count: characters.length,
                     },
-                    { key: "locations", label: "Locations", icon: MapPin, count: locations.length },
-                    { key: "lore", label: "Lore", icon: Scroll, count: loreEntries.length },
+                    {
+                      key: "locations",
+                      label: t("codex.types.locations.label"),
+                      icon: MapPin,
+                      count: locations.length,
+                    },
+                    {
+                      key: "lore",
+                      label: t("codex.types.lore.label"),
+                      icon: Scroll,
+                      count: loreEntries.length,
+                    },
                     {
                       key: "plot",
-                      label: "Plot Threads",
+                      label: t("codex.types.plot.title"),
                       icon: FileText,
                       count: plotThreads.length,
                     },
-                    { key: "notes", label: "Notes", icon: Zap, count: notes.length },
+                    {
+                      key: "notes",
+                      label: t("codex.types.notes.label"),
+                      icon: Zap,
+                      count: notes.length,
+                    },
                   ].map((item) => (
                     <Button
                       className={`w-full justify-start ${selectedType === item.key ? "bg-accent" : ""}`}
@@ -564,18 +632,17 @@ export default function CodexModal({
                       variant="outline"
                     >
                       <Sparkles className="h-4 w-4" />
-                      Create New
+                      {t("codex.modal.actions.createNew")}
                     </Button>
                     <Button className="w-full gap-2" size="sm" variant="outline">
                       <Settings className="h-4 w-4" />
-                      Templates
+                      {t("codex.modal.actions.templates")}
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Middle Panel - Entry List */}
             <div className="flex w-80 flex-col border-r">
               <div className="border-b p-4">
                 <div className="flex items-center gap-3">
@@ -588,7 +655,7 @@ export default function CodexModal({
                 <Input
                   className="mt-3"
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={`Search ${config.title.toLowerCase()}...`}
+                  placeholder={t("codex.modal.search", { type: config.titleLower })}
                   value={searchTerm}
                 />
               </div>
@@ -606,17 +673,17 @@ export default function CodexModal({
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
-                            {getEntryIcon(entry, selectedType)}
+                            {getEntryIcon(selectedType)}
                             <CardTitle className="text-sm">{entry.name}</CardTitle>
                           </div>
                           <div className="flex items-center gap-1">
                             <Badge className="text-xs" variant="outline">
-                              {getEntryRole(entry, selectedType)}
+                              {getEntryRole(selectedType)}
                             </Badge>
                           </div>
                         </div>
                         <CardDescription className="line-clamp-2 text-xs">
-                          {entry.description}
+                          {entry.description || t("codex.modal.noDescriptionAvailable")}
                         </CardDescription>
                       </CardHeader>
                     </Card>
@@ -625,15 +692,17 @@ export default function CodexModal({
                   {filteredEntries.length === 0 && !isCreating && (
                     <div className="py-8 text-center text-muted-foreground">
                       <IconComponent className="mx-auto mb-3 h-12 w-12 opacity-20" />
-                      <p className="mb-2 font-medium">No {config.title.toLowerCase()} found</p>
+                      <p className="mb-2 font-medium">
+                        {t("codex.modal.empty.title", { type: config.titleLower })}
+                      </p>
                       <p className="text-sm">
                         {searchTerm
-                          ? "Try adjusting your search"
-                          : `Create your first ${selectedType.slice(0, -1)}`}
+                          ? t("codex.modal.empty.adjustSearch")
+                          : t("codex.modal.empty.createFirst", { type: config.singularLower })}
                       </p>
                       {!searchTerm && (
                         <Button className="mt-3" onClick={handleCreateNew} size="sm">
-                          Create New
+                          {t("codex.modal.actions.createNew")}
                         </Button>
                       )}
                     </div>
@@ -642,13 +711,11 @@ export default function CodexModal({
               </div>
             </div>
 
-            {/* Right Panel - Entry Details/Form */}
             <div className="flex-1">{renderRightPanel()}</div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialogs */}
       {selectedEntryData && selectedType === "characters" && (
         <DeleteCharacterDialog
           character={selectedEntryData as Character}
@@ -679,7 +746,6 @@ export default function CodexModal({
         />
       )}
 
-      {/* Create Dialogs */}
       <CharacterDialog
         mode="create"
         onOpenChange={setCreateCharacterDialogOpen}

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient, fetchSessionData } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 
 interface LoginBlockProps {
   mode: "signin" | "signup"
@@ -19,8 +20,24 @@ interface LoginBlockProps {
 export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
   const navigate = useNavigate({ from: "/login" })
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const [showPassword, setShowPassword] = useState(false)
   const { isPending } = authClient.useSession()
+  const isSignIn = mode === "signin"
+  const getSubmitLabel = (isSubmitting: boolean) => {
+    if (isSubmitting) {
+      return t("auth.loginBlock.processing")
+    }
+
+    return isSignIn ? t("auth.signIn") : t("auth.loginBlock.createAccount")
+  }
+  const failedMessage = isSignIn ? t("auth.feedback.signInFailed") : t("auth.feedback.signUpFailed")
+  const successMessage = isSignIn
+    ? t("auth.feedback.signInSuccess")
+    : t("auth.feedback.signUpSuccess")
+  const credentialsMessage = isSignIn
+    ? t("auth.feedback.signInInvalidCredentials")
+    : t("auth.feedback.signUpFailedCheckCredentials")
 
   const form = useForm({
     defaultValues: {
@@ -28,48 +45,44 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
       password: "",
     },
     onSubmit: async ({ value }) => {
-      const actionType = mode === "signin" ? "Sign in" : "Sign up"
-
       try {
-        const result =
-          mode === "signin"
-            ? await authClient.signIn.email({
-                email: value.email,
-                password: value.password,
-              })
-            : await authClient.signUp.email({
-                email: value.email,
-                password: value.password,
-                name: value.email.split("@")[0] || "Writer",
-              })
+        const result = isSignIn
+          ? await authClient.signIn.email({
+              email: value.email,
+              password: value.password,
+            })
+          : await authClient.signUp.email({
+              email: value.email,
+              password: value.password,
+              name: value.email.split("@")[0] || t("auth.loginBlock.defaultWriterName"),
+            })
 
         if (result.error) {
-          toast.error(result.error.message || `${actionType} failed`)
+          toast.error(result.error.message || failedMessage)
           return
         }
 
         const sessionData = await fetchSessionData()
 
         if (sessionData?.authenticated && sessionData?.session?.user) {
-          toast.success(`${actionType} successful`)
+          toast.success(successMessage)
           queryClient.setQueryData(["session"], sessionData)
           await queryClient.invalidateQueries({ queryKey: ["session"] })
           navigate({ to: "/dashboard" })
         } else {
-          toast.error(`${actionType} failed - please check your credentials`)
+          toast.error(credentialsMessage)
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : `${actionType} failed`)
+        toast.error(error instanceof Error ? error.message : failedMessage)
       }
     },
     validators: {
       onSubmit: ({ value }) => {
         const schema = z.object({
-          email: z.string().email("Invalid email address"),
-          password:
-            mode === "signup"
-              ? z.string().min(6, "Password must be at least 6 characters")
-              : z.string().min(1, "Password is required"),
+          email: z.string().email(t("auth.validation.invalidEmail")),
+          password: isSignIn
+            ? z.string().min(1, t("auth.validation.passwordRequired"))
+            : z.string().min(6, t("auth.validation.passwordMinSix")),
         })
 
         const result = schema.safeParse(value)
@@ -83,7 +96,7 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
   if (isPending) {
     return (
       <div className="flex min-h-[80vh] w-full items-center justify-center px-4 py-6">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">{t("common.loading")}</div>
       </div>
     )
   }
@@ -92,26 +105,26 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
     <div className="flex min-h-[80vh] w-full items-center justify-center px-4 py-6">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-4">
-          {/* Header */}
           <div className="flex flex-col items-center text-center">
             <h1 className="font-semibold text-xl tracking-tight">
-              {mode === "signin" ? "Welcome back" : "Create an account"}
+              {isSignIn ? t("auth.loginBlock.titleSignIn") : t("auth.loginBlock.titleSignUp")}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {mode === "signin"
-                ? "Enter your credentials to sign in to your account"
-                : "Enter your information to create your account"}
+              {isSignIn
+                ? t("auth.loginBlock.descriptionSignIn")
+                : t("auth.loginBlock.descriptionSignUp")}
             </p>
           </div>
 
-          {/* Form */}
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">{mode === "signin" ? "Sign in" : "Sign up"}</CardTitle>
+              <CardTitle className="text-lg">
+                {isSignIn ? t("auth.signIn") : t("auth.signUp")}
+              </CardTitle>
               <CardDescription>
-                {mode === "signin"
-                  ? "Enter your email and password below"
-                  : "Use your email and choose a password. No email verification is required."}
+                {isSignIn
+                  ? t("auth.loginBlock.cardDescriptionSignIn")
+                  : t("auth.loginBlock.cardDescriptionSignUp")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -127,13 +140,13 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
                   <form.Field name="email">
                     {(field) => (
                       <>
-                        <Label htmlFor={field.name}>Email</Label>
+                        <Label htmlFor={field.name}>{t("auth.fields.email")}</Label>
                         <Input
                           id={field.name}
                           name={field.name}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="you@example.com"
+                          placeholder={t("auth.placeholders.email")}
                           type="email"
                           value={field.state.value}
                         />
@@ -151,14 +164,14 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
                   <form.Field name="password">
                     {(field) => (
                       <>
-                        <Label htmlFor={field.name}>Password</Label>
+                        <Label htmlFor={field.name}>{t("auth.fields.password")}</Label>
                         <div className="relative">
                           <Input
                             id={field.name}
                             name={field.name}
                             onBlur={field.handleBlur}
                             onChange={(e) => field.handleChange(e.target.value)}
-                            placeholder="Enter your password"
+                            placeholder={t("auth.placeholders.password")}
                             type={showPassword ? "text" : "password"}
                             value={field.state.value}
                           />
@@ -186,13 +199,13 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
                   </form.Field>
                 </div>
 
-                {mode === "signin" && (
+                {isSignIn && (
                   <div className="text-right">
                     <Link
                       className="text-muted-foreground text-sm underline-offset-4 hover:text-primary hover:underline"
                       to="/forgot-password"
                     >
-                      Forgot password?
+                      {t("auth.loginBlock.forgotPassword")}
                     </Link>
                   </div>
                 )}
@@ -204,12 +217,7 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
                       disabled={!state.canSubmit || state.isSubmitting}
                       type="submit"
                     >
-                      {(() => {
-                        if (state.isSubmitting) {
-                          return "Processing..."
-                        }
-                        return mode === "signin" ? "Sign in" : "Create account"
-                      })()}
+                      {getSubmitLabel(state.isSubmitting)}
                     </Button>
                   )}
                 </form.Subscribe>
@@ -217,43 +225,42 @@ export default function LoginBlock({ mode, onModeChange }: LoginBlockProps) {
             </CardContent>
           </Card>
 
-          {/* Footer */}
           <div className="text-center text-sm">
-            {mode === "signin" ? (
+            {isSignIn ? (
               <>
-                Don't have an account?{" "}
+                {t("auth.loginBlock.noAccountPrompt")}{" "}
                 <Button
                   className="h-auto p-0 font-semibold"
                   onClick={() => onModeChange("signup")}
                   variant="link"
                 >
-                  Sign up
+                  {t("auth.signUp")}
                 </Button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("auth.loginBlock.alreadyHaveAccountPrompt")}{" "}
                 <Button
                   className="h-auto p-0 font-semibold"
                   onClick={() => onModeChange("signin")}
                   variant="link"
                 >
-                  Sign in
+                  {t("auth.signIn")}
                 </Button>
               </>
             )}
           </div>
 
           <p className="px-2 text-center text-muted-foreground text-sm">
-            By clicking continue, you agree to our{" "}
+            {t("auth.loginBlock.termsPrefix")}{" "}
             <Link className="underline underline-offset-4 hover:text-primary" to="/terms">
-              Terms of Service
+              {t("auth.loginBlock.termsOfService")}
             </Link>{" "}
-            and{" "}
+            {t("auth.loginBlock.termsAnd")}{" "}
             <Link className="underline underline-offset-4 hover:text-primary" to="/privacy">
-              Privacy Policy
+              {t("auth.loginBlock.privacyPolicy")}
             </Link>
-            .
+            {t("auth.loginBlock.termsSuffix")}
           </p>
         </div>
       </div>

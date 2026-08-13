@@ -13,6 +13,7 @@ import { StarterKit } from "@tiptap/starter-kit"
 import { useEffect } from "react"
 import { EditorToolbar } from "@/components/editor-toolbar"
 import { setActiveEditor } from "@/lib/active-editor"
+import { useI18n } from "@/lib/i18n"
 
 interface TiptapEditorProps {
   content?: string
@@ -23,8 +24,11 @@ interface TiptapEditorProps {
 export default function TiptapEditor({
   content = "",
   onUpdate,
-  placeholder = "Write something beautiful...",
+  placeholder: placeholderProp,
 }: TiptapEditorProps) {
+  const { t } = useI18n()
+  const placeholder = placeholderProp ?? t("editor.write.defaultPlaceholder")
+
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
     immediatelyRender: true,
@@ -97,7 +101,7 @@ export default function TiptapEditor({
   }, [editor])
 
   if (!editor) {
-    return <div className="animate-pulse">Loading editor...</div>
+    return <div className="animate-pulse">{t("editor.write.loadingEditor")}</div>
   }
 
   return (
@@ -105,7 +109,7 @@ export default function TiptapEditor({
       <EditorToolbar editor={editor} />
 
       <button
-        aria-label="Text editor content area"
+        aria-label={t("editor.write.editorContentArea")}
         className="tiptap-editor-content h-full flex-1 cursor-text overflow-auto text-left"
         onClick={() => {
           if (editor && !editor.isFocused) {

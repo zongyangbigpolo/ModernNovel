@@ -81,6 +81,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ApiError, api, type ConnectionType, type GraphNodeType } from "@/lib/api"
 import { computeTreeLayout } from "@/lib/graph-layout"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/projects/$projectId/canvas")({
   component: StoryCanvasPage,
@@ -94,23 +95,27 @@ const EXPANDABLE_SUBTYPES = new Set(["premise", "act", "chapter", "scene"])
 
 // Steps whose targets are absent (e.g. no expand buttons on an empty canvas)
 // are skipped automatically by GuidedTour
-const CANVAS_TOUR_STEPS: TourStep[] = [
-  {
-    target: '[data-tour="premise-card"]',
-    title: "Start with a premise",
-    body: "One sentence is enough — it becomes the root node of your story map, ready to expand.",
-  },
-  {
-    target: '[title="Expand with AI"]',
-    title: "Expand any element",
-    body: "The sparkle button breaks an element into the next level — premise into acts, acts into chapters, chapters into scenes. Add optional guidance to steer it.",
-  },
-  {
-    target: '[data-tour="canvas-elements"]',
-    title: "Add elements by hand",
-    body: "Acts, scenes, beats, characters, locations, and lore — drop them anywhere and connect them by dragging between node handles.",
-  },
-]
+type TFunction = (key: string, params?: Record<string, string | number>) => string
+
+function getCanvasTourSteps(t: TFunction): TourStep[] {
+  return [
+    {
+      target: '[data-tour="premise-card"]',
+      title: t("canvas.tour.premise.title"),
+      body: t("canvas.tour.premise.body"),
+    },
+    {
+      target: '[data-tour="expand-node"]',
+      title: t("canvas.tour.expand.title"),
+      body: t("canvas.tour.expand.body"),
+    },
+    {
+      target: '[data-tour="canvas-elements"]',
+      title: t("canvas.tour.elements.title"),
+      body: t("canvas.tour.elements.body"),
+    },
+  ]
+}
 
 // Enhanced story node data interface matching our graph system
 interface StoryNodeData extends Record<string, unknown> {
@@ -143,44 +148,144 @@ interface StoryNodeData extends Record<string, unknown> {
 // Story node type
 type StoryNode = Node<StoryNodeData>
 
-// Node type configurations
-const nodeConfigs = {
-  premise: {
-    color: "bg-indigo-500",
-    icon: <Sparkles className="h-4 w-4" />,
-    label: "Premise",
-    description: "The story's core idea",
-  },
-  act: {
-    color: "bg-blue-500",
-    icon: <Layers className="h-4 w-4" />,
-    label: "Act",
-    description: "Major story divisions",
-  },
-  chapter: {
-    color: "bg-green-500",
-    icon: <Square className="h-4 w-4" />,
-    label: "Chapter",
-    description: "Narrative divisions with scenes",
-  },
-  scene: {
-    color: "bg-yellow-500",
-    icon: <Circle className="h-4 w-4" />,
-    label: "Scene",
-    description: "Individual dramatic units",
-  },
-  beat: {
-    color: "bg-purple-500",
-    icon: <Triangle className="h-4 w-4" />,
-    label: "Beat",
-    description: "Smallest story moments",
-  },
-  "plot-point": {
-    color: "bg-red-500",
-    icon: <Target className="h-4 w-4" />,
-    label: "Plot Point",
-    description: "Key story turning points",
-  },
+function getNodeConfigs(
+  t: TFunction
+): Record<
+  StoryElementType,
+  { color: string; icon: React.ReactNode; label: string; description: string }
+> {
+  return {
+    premise: {
+      color: "bg-indigo-500",
+      icon: <Sparkles className="h-4 w-4" />,
+      label: t("canvas.node.type.premise"),
+      description: t("canvas.node.description.premise"),
+    },
+    act: {
+      color: "bg-blue-500",
+      icon: <Layers className="h-4 w-4" />,
+      label: t("canvas.node.type.act"),
+      description: t("canvas.node.description.act"),
+    },
+    chapter: {
+      color: "bg-green-500",
+      icon: <Square className="h-4 w-4" />,
+      label: t("canvas.node.type.chapter"),
+      description: t("canvas.node.description.chapter"),
+    },
+    scene: {
+      color: "bg-yellow-500",
+      icon: <Circle className="h-4 w-4" />,
+      label: t("canvas.node.type.scene"),
+      description: t("canvas.node.description.scene"),
+    },
+    beat: {
+      color: "bg-purple-500",
+      icon: <Triangle className="h-4 w-4" />,
+      label: t("canvas.node.type.beat"),
+      description: t("canvas.node.description.beat"),
+    },
+    "plot-point": {
+      color: "bg-red-500",
+      icon: <Target className="h-4 w-4" />,
+      label: t("canvas.node.type.plotPoint"),
+      description: t("canvas.node.description.plotPoint"),
+    },
+  }
+}
+
+function getConnectionEdgeLabel(t: TFunction, type: ConnectionType): string | undefined {
+  switch (type) {
+    case "character_arc":
+      return t("canvas.edgeLabel.character")
+    case "setting":
+      return t("canvas.edgeLabel.setting")
+    case "thematic":
+      return t("canvas.edgeLabel.lore")
+    case "plot_thread":
+      return t("canvas.edgeLabel.thread")
+    default:
+      return
+  }
+}
+
+function getConnectionTypeLabel(t: TFunction, type: ConnectionType): string {
+  switch (type) {
+    case "story_flow":
+      return t("canvas.connection.type.storyFlow")
+    case "character_arc":
+      return t("canvas.connection.type.characterArc")
+    case "setting":
+      return t("canvas.connection.type.setting")
+    case "thematic":
+      return t("canvas.connection.type.thematic")
+    case "plot_thread":
+      return t("canvas.connection.type.plotThread")
+    default:
+      return t("canvas.connection.type.reference")
+  }
+}
+
+function getGraphNodeTypeLabel(t: TFunction, type: GraphNodeType): string {
+  switch (type) {
+    case "story_element":
+      return t("canvas.connection.nodeType.storyElement")
+    case "character":
+      return t("canvas.connection.nodeType.character")
+    case "location":
+      return t("canvas.connection.nodeType.location")
+    case "lore":
+      return t("canvas.connection.nodeType.lore")
+    case "plot_thread":
+      return t("canvas.connection.nodeType.plotThread")
+    default:
+      return t("canvas.connection.nodeType.unknown")
+  }
+}
+
+function getColorOptions(t: TFunction) {
+  return [
+    { value: "bg-blue-500", label: `💙 ${t("canvas.colors.blue")}` },
+    { value: "bg-green-500", label: `💚 ${t("canvas.colors.green")}` },
+    { value: "bg-yellow-500", label: `💛 ${t("canvas.colors.yellow")}` },
+    { value: "bg-purple-500", label: `💜 ${t("canvas.colors.purple")}` },
+    { value: "bg-red-500", label: `❤️ ${t("canvas.colors.red")}` },
+    { value: "bg-pink-500", label: `💖 ${t("canvas.colors.pink")}` },
+    { value: "bg-indigo-500", label: `💙 ${t("canvas.colors.indigo")}` },
+  ]
+}
+
+function getDisplayNodeConfig(t: TFunction, data: StoryNodeData) {
+  const nodeConfigs = getNodeConfigs(t)
+
+  if (data.nodeType === "story_element") {
+    return {
+      ...nodeConfigs[data.elementType],
+      color: data.color,
+    }
+  }
+
+  return {
+    color: data.color,
+    icon: <span className="text-sm">{data.icon}</span>,
+    label: getDisplayNodeTypeLabel(t, data.nodeType),
+    description: "",
+  }
+}
+
+function getDisplayNodeTypeLabel(t: TFunction, nodeType: GraphNodeType): string {
+  switch (nodeType) {
+    case "character":
+      return t("canvas.node.type.character")
+    case "location":
+      return t("canvas.node.type.location")
+    case "lore":
+      return t("canvas.node.type.lore")
+    case "plot_thread":
+      return t("canvas.node.type.plotThread")
+    default:
+      return t("canvas.node.type.node")
+  }
 }
 
 // Custom Story Node Component
@@ -190,8 +295,9 @@ function StoryNode(
     onExpand?: (graphNodeId: string, label: string) => void
   }
 ) {
+  const { t } = useI18n()
   const { data, selected, id, onEdit, onExpand } = props
-  const config = nodeConfigs[data.elementType]
+  const config = useMemo(() => getDisplayNodeConfig(t, data), [data, t])
 
   const isExpandable =
     data.nodeType === "story_element" && EXPANDABLE_SUBTYPES.has(data.subType ?? "")
@@ -231,19 +337,23 @@ function StoryNode(
           </Badge>
           {isExpandable && (
             <Button
+              aria-label={t("canvas.node.actions.expandWithAI")}
               className="h-6 w-6 p-0 hover:bg-white/20"
+              data-tour="expand-node"
               onClick={handleExpand}
               size="sm"
-              title="Expand with AI"
+              title={t("canvas.node.actions.expandWithAI")}
               variant="ghost"
             >
               <Sparkles className="h-3 w-3" />
             </Button>
           )}
           <Button
+            aria-label={t("canvas.node.actions.edit")}
             className="h-6 w-6 p-0 hover:bg-white/20"
             onClick={handleEdit}
             size="sm"
+            title={t("canvas.node.actions.edit")}
             variant="ghost"
           >
             <Edit className="h-3 w-3" />
@@ -260,12 +370,13 @@ function StoryNode(
           <div className="space-y-1">
             {data.goals && (
               <div className="text-xs">
-                <span className="font-medium">Goal:</span> {data.goals}
+                <span className="font-medium">{t("canvas.node.fields.goal")}:</span> {data.goals}
               </div>
             )}
             {data.conflict && (
               <div className="text-xs">
-                <span className="font-medium">Conflict:</span> {data.conflict}
+                <span className="font-medium">{t("canvas.node.fields.conflict")}:</span>{" "}
+                {data.conflict}
               </div>
             )}
           </div>
@@ -295,15 +406,12 @@ const initialNodes: StoryNode[] = []
 const initialEdges: Edge[] = []
 
 // Visual styling per connection type
-const CONNECTION_EDGE_STYLES: Record<
-  ConnectionType,
-  { stroke: string; animated: boolean; label?: string }
-> = {
+const CONNECTION_EDGE_STYLES: Record<ConnectionType, { stroke: string; animated: boolean }> = {
   story_flow: { stroke: "#64748b", animated: true },
-  character_arc: { stroke: "#3b82f6", animated: false, label: "character" },
-  setting: { stroke: "#22c55e", animated: false, label: "setting" },
-  thematic: { stroke: "#a855f7", animated: false, label: "lore" },
-  plot_thread: { stroke: "#ef4444", animated: false, label: "thread" },
+  character_arc: { stroke: "#3b82f6", animated: false },
+  setting: { stroke: "#22c55e", animated: false },
+  thematic: { stroke: "#a855f7", animated: false },
+  plot_thread: { stroke: "#ef4444", animated: false },
   reference: { stroke: "#94a3b8", animated: false },
 }
 
@@ -329,6 +437,10 @@ function inferConnectionType(source: GraphNodeType, target: GraphNodeType): Conn
 
 // Main Canvas Component
 function StoryCanvas() {
+  const { t } = useI18n()
+  const nodeConfigs = useMemo(() => getNodeConfigs(t), [t])
+  const colorOptions = useMemo(() => getColorOptions(t), [t])
+  const canvasTourSteps = useMemo(() => getCanvasTourSteps(t), [t])
   const { projectId } = Route.useParams()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -397,12 +509,12 @@ function StoryCanvas() {
           target: conn.targetNodeId,
           type: "smoothstep",
           animated: style.animated,
-          label: style.label,
+          label: getConnectionEdgeLabel(t, conn.connectionType),
           style: { stroke: style.stroke, strokeWidth: 2 },
           labelStyle: { fontSize: 10, fill: style.stroke },
         }
       }),
-    [graphConnections]
+    [graphConnections, t]
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -511,7 +623,7 @@ function StoryCanvas() {
       queryClient.invalidateQueries({ queryKey: ["graph-connections", projectId] })
     },
     onError: () => {
-      toast.error("Failed to delete node. Please try again.")
+      toast.error(t("canvas.feedback.deleteNodeFailed"))
     },
   })
 
@@ -567,7 +679,7 @@ function StoryCanvas() {
     }) => await api.graph.expandNode(projectId, graphNodeId, { instructions }),
     onMutate: () => {
       expandingRef.current = true
-      expandToastRef.current = toast.loading("Expanding story element…")
+      expandToastRef.current = toast.loading(t("canvas.feedback.expandingStoryElement"))
     },
     onSuccess: async (result) => {
       await Promise.all([
@@ -575,22 +687,22 @@ function StoryCanvas() {
         queryClient.invalidateQueries({ queryKey: ["graph-connections", projectId] }),
       ])
       pendingLayoutRef.current = true
-      toast.success(`Added ${result.nodes.length} connected elements`, {
+      toast.success(t("canvas.feedback.expandSuccess", { count: result.nodes.length }), {
         id: expandToastRef.current,
       })
     },
     onError: (error) => {
       if (error instanceof ApiError && error.code === "no_provider") {
-        toast.error("Connect an AI provider to expand story elements.", {
+        toast.error(t("canvas.feedback.expandProviderRequired"), {
           id: expandToastRef.current,
           action: {
-            label: "Set up",
+            label: t("canvas.actions.setUp"),
             onClick: () => navigate({ to: "/dashboard/ai" }),
           },
         })
         return
       }
-      toast.error(error instanceof Error ? error.message : "Failed to expand this element", {
+      toast.error(error instanceof Error ? error.message : t("canvas.feedback.expandFailed"), {
         id: expandToastRef.current,
       })
     },
@@ -605,13 +717,16 @@ function StoryCanvas() {
   const [expandTarget, setExpandTarget] = useState<{ id: string; label: string } | null>(null)
   const [expandGuidance, setExpandGuidance] = useState("")
 
-  const handleNodeExpand = useCallback((graphNodeId: string, label: string) => {
-    if (expandingRef.current) {
-      toast.info("An expansion is already running…")
-      return
-    }
-    setExpandTarget({ id: graphNodeId, label })
-  }, [])
+  const handleNodeExpand = useCallback(
+    (graphNodeId: string, label: string) => {
+      if (expandingRef.current) {
+        toast.info(t("canvas.feedback.expansionAlreadyRunning"))
+        return
+      }
+      setExpandTarget({ id: graphNodeId, label })
+    },
+    [t]
+  )
 
   const confirmExpand = useCallback(() => {
     if (!expandTarget) {
@@ -631,23 +746,23 @@ function StoryCanvas() {
       queryClient.invalidateQueries({ queryKey: ["chapters", projectId] })
       queryClient.invalidateQueries({ queryKey: ["graph-nodes", projectId] })
       if (result.alreadyPromoted) {
-        toast.info("This chapter is already in your manuscript.", {
+        toast.info(t("canvas.manuscript.alreadyPromoted"), {
           action: {
-            label: "Open Write",
+            label: t("canvas.actions.openWrite"),
             onClick: () => navigate({ to: "/projects/$projectId/write", params: { projectId } }),
           },
         })
         return
       }
-      toast.success("Chapter added to your manuscript.", {
+      toast.success(t("canvas.manuscript.promoteSuccess"), {
         action: {
-          label: "Open Write",
+          label: t("canvas.actions.openWrite"),
           onClick: () => navigate({ to: "/projects/$projectId/write", params: { projectId } }),
         },
       })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to promote this chapter")
+      toast.error(error instanceof Error ? error.message : t("canvas.manuscript.promoteFailed"))
     },
   })
 
@@ -680,13 +795,13 @@ function StoryCanvas() {
       })
       await queryClient.invalidateQueries({ queryKey: ["graph-nodes", projectId] })
       setPremiseText("")
-      toast.success("Premise created — press its ✨ button to expand it into acts.")
+      toast.success(t("canvas.emptyState.premiseCreated"))
     } catch {
-      toast.error("Failed to create the premise. Please try again.")
+      toast.error(t("canvas.emptyState.premiseCreateFailed"))
     } finally {
       setIsCreatingPremise(false)
     }
-  }, [premiseText, projectId, queryClient])
+  }, [premiseText, projectId, queryClient, t])
 
   // Create StoryNode wrapper with edit + expand functionality
   const StoryNodeWithEdit = useCallback(
@@ -774,57 +889,83 @@ function StoryCanvas() {
   const [isCreatingNode, setIsCreatingNode] = React.useState(false)
 
   // Utility functions for graph node creation
-  const getNodeConfig = useCallback((type: GraphNodeType, subType?: string) => {
-    // Use existing nodeConfigs for story elements
-    if (type === "story_element" && subType && nodeConfigs[subType as keyof typeof nodeConfigs]) {
-      return {
-        color: nodeConfigs[subType as keyof typeof nodeConfigs].color,
-        icon:
-          typeof nodeConfigs[subType as keyof typeof nodeConfigs].icon === "string"
-            ? nodeConfigs[subType as keyof typeof nodeConfigs].icon
-            : "📄", // fallback for JSX icons
-        label: nodeConfigs[subType as keyof typeof nodeConfigs].label,
-        shape: "rectangle",
+  const getNodeConfig = useCallback(
+    (type: GraphNodeType, subType?: string) => {
+      // Use existing nodeConfigs for story elements
+      if (type === "story_element" && subType && nodeConfigs[subType as keyof typeof nodeConfigs]) {
+        return {
+          color: nodeConfigs[subType as keyof typeof nodeConfigs].color,
+          icon:
+            typeof nodeConfigs[subType as keyof typeof nodeConfigs].icon === "string"
+              ? nodeConfigs[subType as keyof typeof nodeConfigs].icon
+              : "📄", // fallback for JSX icons
+          label: nodeConfigs[subType as keyof typeof nodeConfigs].label,
+          shape: "rectangle",
+        }
       }
-    }
 
-    // Default configs for other node types
-    const defaultConfigs: Record<
-      string,
-      { color: string; icon: string; label: string; shape: string }
-    > = {
-      character: { color: "bg-blue-500", icon: "👤", label: "Character", shape: "circle" },
-      location: { color: "bg-green-500", icon: "🏰", label: "Location", shape: "rectangle" },
-      lore: { color: "bg-purple-500", icon: "📜", label: "Lore", shape: "circle" },
-      plot_thread: { color: "bg-red-500", icon: "🎯", label: "Plot Thread", shape: "diamond" },
-    }
-
-    return (
-      defaultConfigs[type] || {
-        color: "bg-gray-500",
-        icon: "⭐",
-        label: "Node",
-        shape: "rectangle",
+      // Default configs for other node types
+      const defaultConfigs: Record<
+        string,
+        { color: string; icon: string; label: string; shape: string }
+      > = {
+        character: {
+          color: "bg-blue-500",
+          icon: "👤",
+          label: t("canvas.node.type.character"),
+          shape: "circle",
+        },
+        location: {
+          color: "bg-green-500",
+          icon: "🏰",
+          label: t("canvas.node.type.location"),
+          shape: "rectangle",
+        },
+        lore: {
+          color: "bg-purple-500",
+          icon: "📜",
+          label: t("canvas.node.type.lore"),
+          shape: "circle",
+        },
+        plot_thread: {
+          color: "bg-red-500",
+          icon: "🎯",
+          label: t("canvas.node.type.plotThread"),
+          shape: "diamond",
+        },
       }
-    )
-  }, [])
+
+      return (
+        defaultConfigs[type] || {
+          color: "bg-gray-500",
+          icon: "⭐",
+          label: t("canvas.node.type.node"),
+          shape: "rectangle",
+        }
+      )
+    },
+    [nodeConfigs, t]
+  )
 
   const getNodeTitle = useCallback(
     (nodeType: GraphNodeType, config: ReturnType<typeof getNodeConfig>) => {
       if (nodeType === "character") {
-        return "Select Character"
+        return t("canvas.node.creation.selectCharacter")
       }
-      return `New ${config.label}`
+      return t("canvas.node.creation.newItem", { label: config.label })
     },
-    []
+    [t]
   )
 
-  const getNodeDescription = useCallback((nodeType: GraphNodeType) => {
-    if (nodeType === "character") {
-      return "Choose an existing character to place in your story"
-    }
-    return ""
-  }, [])
+  const getNodeDescription = useCallback(
+    (nodeType: GraphNodeType) => {
+      if (nodeType === "character") {
+        return t("canvas.node.creation.chooseCharacter")
+      }
+      return ""
+    },
+    [t]
+  )
 
   const getNodeMetadata = useCallback((nodeType: GraphNodeType) => {
     if (nodeType === "character") {
@@ -971,7 +1112,7 @@ function StoryCanvas() {
       queryClient.invalidateQueries({ queryKey: ["graph-nodes", projectId] })
     },
     onError: () => {
-      toast.error("Failed to save changes")
+      toast.error(t("canvas.feedback.saveChangesFailed"))
     },
   })
 
@@ -1012,91 +1153,91 @@ function StoryCanvas() {
       {/* Menubar */}
       <Menubar className="rounded-none border-b">
         <MenubarMenu>
-          <MenubarTrigger data-tour="canvas-elements">Elements</MenubarTrigger>
+          <MenubarTrigger data-tour="canvas-elements">{t("canvas.menu.elements")}</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => createGraphNode("story_element", "act")}>
               <Layers className="mr-2 h-4 w-4" />
-              New Act <MenubarShortcut>⌘1</MenubarShortcut>
+              {t("canvas.menu.newAct")} <MenubarShortcut>⌘1</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("story_element", "chapter")}>
               <Square className="mr-2 h-4 w-4" />
-              New Chapter <MenubarShortcut>⌘2</MenubarShortcut>
+              {t("canvas.menu.newChapter")} <MenubarShortcut>⌘2</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("story_element", "scene")}>
               <Circle className="mr-2 h-4 w-4" />
-              New Scene <MenubarShortcut>⌘3</MenubarShortcut>
+              {t("canvas.menu.newScene")} <MenubarShortcut>⌘3</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("story_element", "beat")}>
               <Triangle className="mr-2 h-4 w-4" />
-              New Beat <MenubarShortcut>⌘4</MenubarShortcut>
+              {t("canvas.menu.newBeat")} <MenubarShortcut>⌘4</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => createGraphNode("story_element", "plot-point")}>
               <Target className="mr-2 h-4 w-4" />
-              New Plot Point <MenubarShortcut>⌘P</MenubarShortcut>
+              {t("canvas.menu.newPlotPoint")} <MenubarShortcut>⌘P</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => createGraphNode("character")}>
               <Circle className="mr-2 h-4 w-4" />
-              New Character <MenubarShortcut>⌘C</MenubarShortcut>
+              {t("canvas.menu.newCharacter")} <MenubarShortcut>⌘C</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("location")}>
               <Square className="mr-2 h-4 w-4" />
-              New Location <MenubarShortcut>⌘L</MenubarShortcut>
+              {t("canvas.menu.newLocation")} <MenubarShortcut>⌘L</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("lore")}>
               <FileText className="mr-2 h-4 w-4" />
-              New Lore <MenubarShortcut>⌘R</MenubarShortcut>
+              {t("canvas.menu.newLore")} <MenubarShortcut>⌘R</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => createGraphNode("plot_thread")}>
               <Target className="mr-2 h-4 w-4" />
-              New Plot Thread <MenubarShortcut>⌘T</MenubarShortcut>
+              {t("canvas.menu.newPlotThread")} <MenubarShortcut>⌘T</MenubarShortcut>
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger>View</MenubarTrigger>
+          <MenubarTrigger>{t("canvas.menu.view")}</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => zoomIn()}>
               <ZoomIn className="mr-2 h-4 w-4" />
-              Zoom In <MenubarShortcut>⌘+</MenubarShortcut>
+              {t("canvas.menu.zoomIn")} <MenubarShortcut>⌘+</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => zoomOut()}>
               <ZoomOut className="mr-2 h-4 w-4" />
-              Zoom Out <MenubarShortcut>⌘-</MenubarShortcut>
+              {t("canvas.menu.zoomOut")} <MenubarShortcut>⌘-</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => fitView()}>
               <FileText className="mr-2 h-4 w-4" />
-              Fit View <MenubarShortcut>⌘0</MenubarShortcut>
+              {t("canvas.menu.fitView")} <MenubarShortcut>⌘0</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={applyAutoLayout}>
               <Network className="mr-2 h-4 w-4" />
-              Auto-layout
+              {t("canvas.menu.autoLayout")}
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={tour.start}>
               <Sparkles className="mr-2 h-4 w-4" />
-              Show guide
+              {t("canvas.menu.showGuide")}
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
         <MenubarMenu>
-          <MenubarTrigger>Edit</MenubarTrigger>
+          <MenubarTrigger>{t("canvas.menu.edit")}</MenubarTrigger>
           <MenubarContent>
             <MenubarItem disabled>
               <Undo2 className="mr-2 h-4 w-4" />
-              Undo <MenubarShortcut>⌘Z</MenubarShortcut>
+              {t("canvas.menu.undo")} <MenubarShortcut>⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarItem disabled>
               <Redo2 className="mr-2 h-4 w-4" />
-              Redo <MenubarShortcut>⌘⇧Z</MenubarShortcut>
+              {t("canvas.menu.redo")} <MenubarShortcut>⌘⇧Z</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem disabled={!selectedNode} onClick={deleteSelectedNode}>
-              Delete Selected <MenubarShortcut>⌫</MenubarShortcut>
+              {t("canvas.menu.deleteSelected")} <MenubarShortcut>⌫</MenubarShortcut>
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
@@ -1112,6 +1253,13 @@ function StoryCanvas() {
       {/* React Flow Canvas */}
       <div className="h-[calc(100vh-40px)]">
         <ReactFlow
+          ariaLabelConfig={{
+            "controls.ariaLabel": t("canvas.controls.label"),
+            "controls.fitView.ariaLabel": t("canvas.controls.fitView"),
+            "controls.interactive.ariaLabel": t("canvas.controls.toggleInteractivity"),
+            "controls.zoomIn.ariaLabel": t("canvas.controls.zoomIn"),
+            "controls.zoomOut.ariaLabel": t("canvas.controls.zoomOut"),
+          }}
           defaultEdgeOptions={{
             animated: true,
             type: "smoothstep",
@@ -1144,17 +1292,15 @@ function StoryCanvas() {
                   <div className="rounded-lg bg-indigo-500 p-2 text-white">
                     <Sparkles className="h-4 w-4" />
                   </div>
-                  <h2 className="font-semibold text-lg">Start your story map</h2>
+                  <h2 className="font-semibold text-lg">{t("canvas.emptyState.title")}</h2>
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Describe your story in a sentence or two. Then expand it — premise into acts, acts
-                  into chapters, chapters into scenes — each level graphically connected to the
-                  last.
+                  {t("canvas.emptyState.description")}
                 </p>
                 <Textarea
                   className="min-h-[80px] resize-none"
                   onChange={(e) => setPremiseText(e.target.value)}
-                  placeholder="A lighthouse keeper discovers the ships she guides ashore arrive from a century in the past…"
+                  placeholder={t("canvas.emptyState.placeholder")}
                   rows={3}
                   value={premiseText}
                 />
@@ -1169,7 +1315,7 @@ function StoryCanvas() {
                   ) : (
                     <Sparkles className="mr-2 h-4 w-4" />
                   )}
-                  Create premise
+                  {t("canvas.emptyState.createPremise")}
                 </Button>
               </div>
             </Panel>
@@ -1181,9 +1327,11 @@ function StoryCanvas() {
             position="top-right"
           >
             <div className="space-y-1 text-muted-foreground">
-              <div>Elements: {nodes.length}</div>
-              <div>Connections: {edges.length}</div>
-              <div>Selected: {selectedNode?.data.label || "None"}</div>
+              <div>{t("canvas.info.elements", { count: nodes.length })}</div>
+              <div>{t("canvas.info.connections", { count: edges.length })}</div>
+              <div>
+                {t("canvas.info.selected", { name: selectedNode?.data.label || t("common.none") })}
+              </div>
             </div>
           </Panel>
         </ReactFlow>
@@ -1193,7 +1341,7 @@ function StoryCanvas() {
       <GuidedTour
         onFinish={tour.finish}
         open={tour.open && !nodesLoading}
-        steps={CANVAS_TOUR_STEPS}
+        steps={canvasTourSteps}
       />
 
       {/* Expansion guidance dialog */}
@@ -1209,15 +1357,16 @@ function StoryCanvas() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Expand “{expandTarget?.label}”
+              {t("canvas.dialog.expand.title", { name: expandTarget?.label ?? "" })}
             </DialogTitle>
-            <DialogDescription>
-              AI breaks this element into the next level of your story, connected on the canvas.
-            </DialogDescription>
+            <DialogDescription>{t("canvas.dialog.expand.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label className="font-medium text-sm" htmlFor="expand-guidance">
-              Guidance <span className="font-normal text-muted-foreground">(optional)</span>
+              {t("canvas.dialog.expand.guidance")}{" "}
+              <span className="font-normal text-muted-foreground">
+                ({t("common.optional").toLowerCase()})
+              </span>
             </Label>
             <Textarea
               className="min-h-[72px] resize-none"
@@ -1229,18 +1378,16 @@ function StoryCanvas() {
                   confirmExpand()
                 }
               }}
-              placeholder="Steer the expansion — e.g. “darker tone, five chapters, end on a betrayal”"
+              placeholder={t("canvas.dialog.expand.placeholder")}
               rows={3}
               value={expandGuidance}
             />
-            <p className="text-muted-foreground text-xs">
-              Press Enter to expand, Shift+Enter for a new line.
-            </p>
+            <p className="text-muted-foreground text-xs">{t("canvas.dialog.expand.hint")}</p>
           </div>
           <DialogFooter>
             <Button onClick={confirmExpand} type="button">
               <Sparkles className="mr-2 h-4 w-4" />
-              Expand
+              {t("canvas.dialog.expand.button")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1254,12 +1401,14 @@ function StoryCanvas() {
               <SheetHeader className="px-2 pb-4">
                 <SheetTitle className="flex items-center gap-3 text-xl">
                   <div className={`rounded-lg p-2 text-white ${selectedNode.data.color}`}>
-                    {nodeConfigs[selectedNode.data.elementType].icon}
+                    {getDisplayNodeConfig(t, selectedNode.data).icon}
                   </div>
-                  Edit {nodeConfigs[selectedNode.data.elementType].label}
+                  {t("canvas.detail.editTitle", {
+                    label: getDisplayNodeConfig(t, selectedNode.data).label,
+                  })}
                 </SheetTitle>
                 <SheetDescription className="text-base">
-                  Configure the details for this story element
+                  {t("canvas.detail.description")}
                 </SheetDescription>
               </SheetHeader>
 
@@ -1271,25 +1420,27 @@ function StoryCanvas() {
                     }`}
                   >
                     <TabsTrigger className="text-sm" value="overview">
-                      Overview
+                      {t("canvas.tabs.overview")}
                     </TabsTrigger>
                     <TabsTrigger className="text-sm" value="story">
-                      Story
+                      {t("canvas.tabs.story")}
                     </TabsTrigger>
                     {selectedNode.data.nodeType === "story_element" && (
                       <TabsTrigger className="text-sm" value="writing">
-                        Writing
+                        {t("canvas.tabs.writing")}
                       </TabsTrigger>
                     )}
                     <TabsTrigger className="text-sm" value="connections">
-                      Links
+                      {t("canvas.tabs.links")}
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent className="space-y-5 px-1" value="overview">
                     {selectedNode.data.nodeType === "character" && (
                       <div className="space-y-2">
-                        <Label className="font-medium text-sm">Linked Character</Label>
+                        <Label className="font-medium text-sm">
+                          {t("canvas.detail.linkedCharacter")}
+                        </Label>
                         <Select
                           onValueChange={(characterId) => {
                             const character = characters.find((c) => c.id === characterId)
@@ -1309,7 +1460,7 @@ function StoryCanvas() {
                           value={selectedNode.data.linkedCharacterId ?? ""}
                         >
                           <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Choose a character" />
+                            <SelectValue placeholder={t("canvas.detail.chooseCharacter")} />
                           </SelectTrigger>
                           <SelectContent>
                             {characters.map((character) => (
@@ -1321,7 +1472,7 @@ function StoryCanvas() {
                         </Select>
                         {characters.length === 0 && (
                           <p className="text-muted-foreground text-xs">
-                            No characters yet — add some in the Codex first.
+                            {t("canvas.detail.noCharacters")}
                           </p>
                         )}
                       </div>
@@ -1329,7 +1480,7 @@ function StoryCanvas() {
 
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="title">
-                        Title
+                        {t("canvas.detail.title")}
                       </Label>
                       <Input
                         className="h-11"
@@ -1342,14 +1493,14 @@ function StoryCanvas() {
 
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="description">
-                        Description
+                        {t("common.description")}
                       </Label>
                       <Textarea
                         className="min-h-[90px] resize-none"
                         id="description"
                         onBlur={persistSelectedNode}
                         onChange={(e) => updateSelectedNode({ description: e.target.value })}
-                        placeholder="Describe this story element..."
+                        placeholder={t("canvas.detail.descriptionPlaceholder")}
                         rows={3}
                         value={selectedNode.data.description}
                       />
@@ -1357,7 +1508,7 @@ function StoryCanvas() {
 
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="color">
-                        Color Theme
+                        {t("canvas.detail.colorTheme")}
                       </Label>
                       <Select
                         onValueChange={(color) => {
@@ -1370,13 +1521,11 @@ function StoryCanvas() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bg-blue-500">💙 Blue</SelectItem>
-                          <SelectItem value="bg-green-500">💚 Green</SelectItem>
-                          <SelectItem value="bg-yellow-500">💛 Yellow</SelectItem>
-                          <SelectItem value="bg-purple-500">💜 Purple</SelectItem>
-                          <SelectItem value="bg-red-500">❤️ Red</SelectItem>
-                          <SelectItem value="bg-pink-500">💖 Pink</SelectItem>
-                          <SelectItem value="bg-indigo-500">💙 Indigo</SelectItem>
+                          {colorOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1385,14 +1534,14 @@ function StoryCanvas() {
                   <TabsContent className="space-y-5 px-1" value="story">
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="goals">
-                        Goals
+                        {t("canvas.story.goals")}
                       </Label>
                       <Textarea
                         className="min-h-[80px] resize-none"
                         id="goals"
                         onBlur={persistSelectedNode}
                         onChange={(e) => updateSelectedNode({ goals: e.target.value })}
-                        placeholder="What does the character want to achieve in this part?"
+                        placeholder={t("canvas.story.goalsPlaceholder")}
                         rows={3}
                         value={selectedNode.data.goals}
                       />
@@ -1400,14 +1549,14 @@ function StoryCanvas() {
 
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="conflict">
-                        Conflict
+                        {t("canvas.story.conflict")}
                       </Label>
                       <Textarea
                         className="min-h-[80px] resize-none"
                         id="conflict"
                         onBlur={persistSelectedNode}
                         onChange={(e) => updateSelectedNode({ conflict: e.target.value })}
-                        placeholder="What obstacles, challenges, or tensions arise?"
+                        placeholder={t("canvas.story.conflictPlaceholder")}
                         rows={3}
                         value={selectedNode.data.conflict}
                       />
@@ -1415,14 +1564,14 @@ function StoryCanvas() {
 
                     <div className="space-y-2">
                       <Label className="font-medium text-sm" htmlFor="notes">
-                        Notes & Ideas
+                        {t("canvas.story.notesIdeas")}
                       </Label>
                       <Textarea
                         className="min-h-[100px] resize-none"
                         id="notes"
                         onBlur={persistSelectedNode}
                         onChange={(e) => updateSelectedNode({ notes: e.target.value })}
-                        placeholder="Additional notes, inspiration, and creative ideas..."
+                        placeholder={t("canvas.story.notesPlaceholder")}
                         rows={4}
                         value={selectedNode.data.notes}
                       />
@@ -1440,15 +1589,16 @@ function StoryCanvas() {
 
                   <TabsContent className="space-y-5 px-1" value="connections">
                     <div className="space-y-2">
-                      <Label className="font-medium text-sm">Connected Elements</Label>
+                      <Label className="font-medium text-sm">
+                        {t("canvas.connections.connectedElements")}
+                      </Label>
                       {graphConnections.filter(
                         (conn) =>
                           conn.sourceNodeId === selectedNode.data.graphNodeId ||
                           conn.targetNodeId === selectedNode.data.graphNodeId
                       ).length === 0 ? (
                         <div className="rounded-lg border bg-muted/20 p-3 text-muted-foreground text-sm">
-                          No connections yet. Drag from a node's bottom handle to another node's top
-                          handle to link them — connections feed AI draft generation.
+                          {t("canvas.connections.empty")}
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -1470,14 +1620,16 @@ function StoryCanvas() {
                                   <div className="min-w-0">
                                     <div className="truncate font-medium text-sm">
                                       {isOutgoing ? "→ " : "← "}
-                                      {other?.title ?? "Unknown node"}
+                                      {other?.title ?? t("canvas.connections.unknownNode")}
                                     </div>
                                     <div className="text-muted-foreground text-xs">
-                                      {other?.nodeType.replace("_", " ")}
+                                      {other
+                                        ? getGraphNodeTypeLabel(t, other.nodeType)
+                                        : t("canvas.connection.nodeType.unknown")}
                                     </div>
                                   </div>
                                   <Badge className="ml-2 shrink-0 text-xs" variant="outline">
-                                    {conn.connectionType.replace("_", " ")}
+                                    {getConnectionTypeLabel(t, conn.connectionType)}
                                   </Badge>
                                 </div>
                               )
@@ -1487,7 +1639,7 @@ function StoryCanvas() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-medium text-sm">Story Flow</Label>
+                      <Label className="font-medium text-sm">{t("canvas.storyFlow.title")}</Label>
                       <div className="rounded-lg border bg-background p-3">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-sm">
@@ -1502,11 +1654,11 @@ function StoryCanvas() {
                               {edges.filter(
                                 (e) => e.source === selectedNode.id || e.target === selectedNode.id
                               ).length === 1
-                                ? "Connection"
-                                : "Connections"}
+                                ? t("canvas.storyFlow.connection")
+                                : t("canvas.storyFlow.connections")}
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              Links to other story elements
+                              {t("canvas.storyFlow.description")}
                             </div>
                           </div>
                         </div>
@@ -1521,9 +1673,9 @@ function StoryCanvas() {
                   <div className="border-t px-2 pt-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-sm">Manuscript</h4>
+                        <h4 className="font-medium text-sm">{t("canvas.manuscript.title")}</h4>
                         <p className="mt-1 text-muted-foreground text-xs">
-                          Send this chapter to the Write editor
+                          {t("canvas.manuscript.description")}
                         </p>
                       </div>
                       <Button
@@ -1534,7 +1686,7 @@ function StoryCanvas() {
                         variant="outline"
                       >
                         <BookPlus className="mr-2 h-4 w-4" />
-                        Promote to manuscript
+                        {t("canvas.manuscript.button")}
                       </Button>
                     </div>
                   </div>
@@ -1543,20 +1695,23 @@ function StoryCanvas() {
               <div className="border-t px-2 pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-sm">Danger Zone</h4>
+                    <h4 className="font-medium text-sm">{t("canvas.danger.title")}</h4>
                     <p className="mt-1 text-muted-foreground text-xs">
-                      This action cannot be undone
+                      {t("canvas.danger.description")}
                     </p>
                   </div>
                   <ConfirmDialog
-                    confirmText="Delete"
-                    description={`Are you sure you want to delete "${selectedNode.data.label}"? This will permanently remove the story element and all its connections. This action cannot be undone.`}
+                    cancelText={t("common.cancel")}
+                    confirmText={t("common.delete")}
+                    description={t("canvas.danger.deleteDescription", {
+                      name: selectedNode.data.label,
+                    })}
                     onConfirm={deleteSelectedNode}
-                    title="Delete Story Element"
+                    title={t("canvas.danger.deleteTitle")}
                     variant="destructive"
                   >
                     <Button size="sm" variant="destructive">
-                      Delete Element
+                      {t("canvas.danger.deleteButton")}
                     </Button>
                   </ConfirmDialog>
                 </div>

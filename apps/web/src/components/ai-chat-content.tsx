@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { ApiError, aiApi } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 interface Message {
@@ -24,23 +25,24 @@ interface AIChatContentProps {
 
 // Cap the history sent to the model to keep requests small
 const MAX_HISTORY_MESSAGES = 12
-
-const PROMPT_SUGGESTIONS = [
-  "Help me develop this character",
-  "Suggest plot twists for this scene",
-  "Improve the pacing here",
-  "Make this dialogue more realistic",
-  "Add more sensory details",
-  "What's missing from this scene?",
-]
+const PROMPT_SUGGESTION_KEYS = [
+  "editor.aiChat.suggestion.developCharacter",
+  "editor.aiChat.suggestion.plotTwists",
+  "editor.aiChat.suggestion.improvePacing",
+  "editor.aiChat.suggestion.realisticDialogue",
+  "editor.aiChat.suggestion.sensoryDetails",
+  "editor.aiChat.suggestion.missingScene",
+] as const
 
 export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
+  const { t } = useI18n()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [needsProvider, setNeedsProvider] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const promptSuggestions = PROMPT_SUGGESTION_KEYS.map((key) => t(key))
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -76,7 +78,7 @@ export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
         setNeedsProvider(true)
         return
       }
-      setErrorText(error instanceof Error ? error.message : "Something went wrong")
+      setErrorText(error instanceof Error ? error.message : t("common.somethingWentWrong"))
     },
   })
 
@@ -117,13 +119,12 @@ export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
         <div className="mb-3 w-fit rounded-full bg-muted p-3">
           <Settings className="h-6 w-6 text-muted-foreground" />
         </div>
-        <h3 className="mb-2 font-semibold text-sm">Connect an AI provider</h3>
+        <h3 className="mb-2 font-semibold text-sm">{t("editor.aiChat.connectProvider")}</h3>
         <p className="mb-4 text-muted-foreground text-sm">
-          The writing assistant uses your own AI provider account (OpenRouter, OpenAI, Anthropic,
-          Ollama, and more). Connect one to start chatting.
+          {t("editor.aiChat.connectProviderDescription")}
         </p>
         <Button asChild size="sm">
-          <Link to="/dashboard/ai">Set up AI provider</Link>
+          <Link to="/dashboard/ai">{t("editor.aiChat.setUpProvider")}</Link>
         </Button>
       </div>
     )
@@ -139,16 +140,13 @@ export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
               <div className="mx-auto mb-3 w-fit rounded-full bg-muted p-3">
                 <Bot className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="mb-4 text-muted-foreground text-sm">
-                Hi! I'm here to help with your writing. Ask me anything about characters, plot,
-                style, or storytelling.
-              </p>
+              <p className="mb-4 text-muted-foreground text-sm">{t("editor.aiChat.welcome")}</p>
               <div className="space-y-2">
                 <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                  Try asking:
+                  {t("editor.aiChat.tryAsking")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {PROMPT_SUGGESTIONS.map((suggestion) => (
+                  {promptSuggestions.map((suggestion) => (
                     <Badge
                       className="cursor-pointer py-1 text-xs hover:bg-secondary/80"
                       key={suggestion}
@@ -194,7 +192,7 @@ export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
                       size="sm"
                       variant="ghost"
                     >
-                      Insert into editor
+                      {t("editor.aiChat.insertIntoEditor")}
                     </Button>
                   </div>
                 )}
@@ -247,11 +245,18 @@ export function AIChatContent({ onInsertText, projectId }: AIChatContentProps) {
             className="flex-1"
             disabled={isTyping}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your writing..."
+            placeholder={t("editor.aiChat.placeholder")}
             ref={inputRef}
             value={input}
           />
-          <Button className="px-3" disabled={!input.trim() || isTyping} size="sm" type="submit">
+          <Button
+            aria-label={t("editor.aiChat.send")}
+            className="px-3"
+            disabled={!input.trim() || isTyping}
+            size="sm"
+            title={t("editor.aiChat.send")}
+            type="submit"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>

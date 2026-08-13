@@ -42,23 +42,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Toggle } from "@/components/ui/toggle"
+import { useI18n } from "@/lib/i18n"
 
 interface EditorToolbarProps {
   editor: Editor
 }
 
 const HIGHLIGHT_COLORS = [
-  { name: "Yellow", value: "#fef08a" },
-  { name: "Green", value: "#bbf7d0" },
-  { name: "Blue", value: "#bfdbfe" },
-  { name: "Pink", value: "#fbcfe8" },
-  { name: "Purple", value: "#e9d5ff" },
-]
+  { key: "yellow", value: "#fef08a" },
+  { key: "green", value: "#bbf7d0" },
+  { key: "blue", value: "#bfdbfe" },
+  { key: "pink", value: "#fbcfe8" },
+  { key: "purple", value: "#e9d5ff" },
+] as const
 
 const HEADINGS = [
-  { level: 1, icon: Heading1, label: "Heading 1" },
-  { level: 2, icon: Heading2, label: "Heading 2" },
-  { level: 3, icon: Heading3, label: "Heading 3" },
+  { level: 1, icon: Heading1, labelKey: "editor.toolbar.heading1" },
+  { level: 2, icon: Heading2, labelKey: "editor.toolbar.heading2" },
+  { level: 3, icon: Heading3, labelKey: "editor.toolbar.heading3" },
 ] as const
 
 function ToolbarSeparator() {
@@ -66,26 +67,32 @@ function ToolbarSeparator() {
 }
 
 function HeadingMenu({ editor }: EditorToolbarProps) {
+  const { t } = useI18n()
   const active = HEADINGS.find((h) => editor.isActive("heading", { level: h.level }))
   const ActiveIcon = active?.icon ?? Pilcrow
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="h-8 w-8 p-0" size="sm" title="Text style" variant="ghost">
+        <Button
+          className="h-8 w-8 p-0"
+          size="sm"
+          title={t("editor.toolbar.textStyle")}
+          variant="ghost"
+        >
           <ActiveIcon className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuItem onClick={() => editor.chain().focus().setParagraph().run()}>
-          <Pilcrow className="mr-2 h-4 w-4" /> Paragraph
+          <Pilcrow className="mr-2 h-4 w-4" /> {t("editor.toolbar.paragraph")}
         </DropdownMenuItem>
-        {HEADINGS.map(({ level, icon: Icon, label }) => (
+        {HEADINGS.map(({ level, icon: Icon, labelKey }) => (
           <DropdownMenuItem
             key={level}
             onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
           >
-            <Icon className="mr-2 h-4 w-4" /> {label}
+            <Icon className="mr-2 h-4 w-4" /> {t(labelKey)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -94,6 +101,8 @@ function HeadingMenu({ editor }: EditorToolbarProps) {
 }
 
 function HighlightMenu({ editor }: EditorToolbarProps) {
+  const { t } = useI18n()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -101,7 +110,7 @@ function HighlightMenu({ editor }: EditorToolbarProps) {
           className="h-8 w-8 p-0"
           pressed={editor.isActive("highlight")}
           size="sm"
-          title="Highlight"
+          title={t("editor.toolbar.highlight")}
         >
           <Highlighter className="h-4 w-4" />
         </Toggle>
@@ -116,12 +125,12 @@ function HighlightMenu({ editor }: EditorToolbarProps) {
               className="mr-2 inline-block h-4 w-4 rounded-sm border"
               style={{ backgroundColor: color.value }}
             />
-            {color.name}
+            {t(`editor.toolbar.highlight.${color.key}`)}
           </DropdownMenuItem>
         ))}
         <DropdownMenuItem onClick={() => editor.chain().focus().unsetHighlight().run()}>
           <span className="mr-2 inline-block h-4 w-4 rounded-sm border bg-background" />
-          None
+          {t("common.none")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -129,6 +138,7 @@ function HighlightMenu({ editor }: EditorToolbarProps) {
 }
 
 function LinkControl({ editor }: EditorToolbarProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState("")
 
@@ -159,7 +169,7 @@ function LinkControl({ editor }: EditorToolbarProps) {
         onPressedChange={handleToggle}
         pressed={isActive}
         size="sm"
-        title={isActive ? "Remove link" : "Add link"}
+        title={isActive ? t("editor.toolbar.removeLink") : t("editor.toolbar.addLink")}
       >
         <LinkIcon className="h-4 w-4" />
       </Toggle>
@@ -167,10 +177,10 @@ function LinkControl({ editor }: EditorToolbarProps) {
       <Dialog onOpenChange={setOpen} open={open}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add link</DialogTitle>
+            <DialogTitle>{t("editor.toolbar.addLink")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="link-url">URL</Label>
+            <Label htmlFor="link-url">{t("editor.toolbar.url")}</Label>
             <Input
               id="link-url"
               onChange={(e) => setUrl(e.target.value)}
@@ -180,16 +190,16 @@ function LinkControl({ editor }: EditorToolbarProps) {
                   applyLink()
                 }
               }}
-              placeholder="https://example.com"
+              placeholder={t("editor.toolbar.urlPlaceholder")}
               value={url}
             />
           </div>
           <DialogFooter>
             <Button onClick={() => setOpen(false)} type="button" variant="ghost">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button disabled={!url.trim()} onClick={applyLink} type="button">
-              Add link
+              {t("editor.toolbar.addLink")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -199,6 +209,8 @@ function LinkControl({ editor }: EditorToolbarProps) {
 }
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
+  const { t } = useI18n()
+
   return (
     <div
       className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b bg-background px-2 py-1.5 [&>button]:shrink-0"
@@ -209,7 +221,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         disabled={!editor.can().undo()}
         onClick={() => editor.chain().focus().undo().run()}
         size="sm"
-        title="Undo"
+        title={t("editor.toolbar.undo")}
         type="button"
         variant="ghost"
       >
@@ -220,7 +232,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         disabled={!editor.can().redo()}
         onClick={() => editor.chain().focus().redo().run()}
         size="sm"
-        title="Redo"
+        title={t("editor.toolbar.redo")}
         type="button"
         variant="ghost"
       >
@@ -238,7 +250,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
         pressed={editor.isActive("bold")}
         size="sm"
-        title="Bold"
+        title={t("editor.toolbar.bold")}
       >
         <Bold className="h-4 w-4" />
       </Toggle>
@@ -247,7 +259,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
         pressed={editor.isActive("italic")}
         size="sm"
-        title="Italic"
+        title={t("editor.toolbar.italic")}
       >
         <Italic className="h-4 w-4" />
       </Toggle>
@@ -256,7 +268,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
         pressed={editor.isActive("underline")}
         size="sm"
-        title="Underline"
+        title={t("editor.toolbar.underline")}
       >
         <Underline className="h-4 w-4" />
       </Toggle>
@@ -265,7 +277,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleStrike().run()}
         pressed={editor.isActive("strike")}
         size="sm"
-        title="Strikethrough"
+        title={t("editor.toolbar.strikethrough")}
       >
         <Strikethrough className="h-4 w-4" />
       </Toggle>
@@ -274,7 +286,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleCode().run()}
         pressed={editor.isActive("code")}
         size="sm"
-        title="Inline code"
+        title={t("editor.toolbar.inlineCode")}
       >
         <Code className="h-4 w-4" />
       </Toggle>
@@ -287,7 +299,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().setTextAlign("left").run()}
         pressed={editor.isActive({ textAlign: "left" })}
         size="sm"
-        title="Align left"
+        title={t("editor.toolbar.alignLeft")}
       >
         <AlignLeft className="h-4 w-4" />
       </Toggle>
@@ -296,7 +308,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().setTextAlign("center").run()}
         pressed={editor.isActive({ textAlign: "center" })}
         size="sm"
-        title="Align center"
+        title={t("editor.toolbar.alignCenter")}
       >
         <AlignCenter className="h-4 w-4" />
       </Toggle>
@@ -305,7 +317,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().setTextAlign("right").run()}
         pressed={editor.isActive({ textAlign: "right" })}
         size="sm"
-        title="Align right"
+        title={t("editor.toolbar.alignRight")}
       >
         <AlignRight className="h-4 w-4" />
       </Toggle>
@@ -314,7 +326,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().setTextAlign("justify").run()}
         pressed={editor.isActive({ textAlign: "justify" })}
         size="sm"
-        title="Justify"
+        title={t("editor.toolbar.justify")}
       >
         <AlignJustify className="h-4 w-4" />
       </Toggle>
@@ -326,7 +338,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
         pressed={editor.isActive("bulletList")}
         size="sm"
-        title="Bullet list"
+        title={t("editor.toolbar.bulletList")}
       >
         <List className="h-4 w-4" />
       </Toggle>
@@ -335,7 +347,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
         pressed={editor.isActive("orderedList")}
         size="sm"
-        title="Numbered list"
+        title={t("editor.toolbar.numberedList")}
       >
         <ListOrdered className="h-4 w-4" />
       </Toggle>
@@ -344,7 +356,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleTaskList().run()}
         pressed={editor.isActive("taskList")}
         size="sm"
-        title="Task list"
+        title={t("editor.toolbar.taskList")}
       >
         <ListTodo className="h-4 w-4" />
       </Toggle>
@@ -353,7 +365,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
         pressed={editor.isActive("blockquote")}
         size="sm"
-        title="Blockquote"
+        title={t("editor.toolbar.blockquote")}
       >
         <Quote className="h-4 w-4" />
       </Toggle>
@@ -362,7 +374,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
         pressed={editor.isActive("codeBlock")}
         size="sm"
-        title="Code block"
+        title={t("editor.toolbar.codeBlock")}
       >
         <SquareCode className="h-4 w-4" />
       </Toggle>

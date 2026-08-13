@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useI18n } from "@/lib/i18n"
 
 interface ConfirmDialogProps {
   cancelText?: string
@@ -24,14 +25,15 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({
   title,
   description,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   variant = "default",
   onConfirm,
   children,
   disabled = false,
 }: ConfirmDialogProps) {
   const [open, setOpen] = useState(false)
+  const { t } = useI18n()
 
   const handleConfirm = () => {
     onConfirm()
@@ -50,10 +52,10 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button onClick={() => setOpen(false)} variant="outline">
-            {cancelText}
+            {cancelText ?? t("confirmDialog.defaultCancel")}
           </Button>
           <Button onClick={handleConfirm} variant={variant}>
-            {confirmText}
+            {confirmText ?? t("confirmDialog.defaultConfirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

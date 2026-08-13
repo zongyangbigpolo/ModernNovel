@@ -1,26 +1,51 @@
-# ModernNovel
+# 麻豆小说（ModernNovel）
 
-ModernNovel 是一个面向长篇小说创作的开源 AI 写作工作台。它把项目、章节、人物、地点、世界观、情节画布和 AI 助手放在同一个 Workspace 中，并允许每位用户使用自己的模型 API Key 或本地 Ollama。
+> 一个为中文长篇小说创作设计的开源 AI 工作台。
 
-> 当前项目处于 POC 阶段。核心写作、AI Provider、项目级 Writer Skill、持久风格记忆、Workspace、成员角色和超级管理员能力已经可用，但实时协作和 DOCX/EPUB 导出仍待实现。
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-6f5a8a.svg)](LICENSE.md)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178c6.svg)
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers%20%2B%20D1-f38020.svg)
+![Bun](https://img.shields.io/badge/Bun-1.3%2B-black.svg)
 
-![从故事构想到可编辑情节图](.github/story-map-demo.gif)
+麻豆小说把章节编辑、人物与地点设定、故事画布、项目级写作技巧和 AI 助手放进同一个 Workspace。它支持用户通过网页配置自己的模型 API Key，也可以连接本地 Ollama；后端和前端能够一起部署到 Cloudflare。
+
+> 当前版本适合作为个人创作工具、团队内部系统或二次开发基础。项目仍处于 POC 阶段，正式公开运营前请补充邮箱验证、机器人防护、监控告警和更严格的安全策略。
+
+<p align="center">
+  <img src=".github/madou-writing-workspace.png" alt="麻豆小说中文写作工作台：章节、设定与 AI 助手" width="100%" />
+</p>
+
+上图展示了中文写作界面：左侧维护章节和小说设定，中间使用富文本编辑器写作，右侧 AI 助手可以结合当前作品上下文给出续写、修改和结构建议。
+
+## 为什么做麻豆小说
+
+通用聊天工具很难持续理解一部长篇小说。麻豆小说把作品资料和 AI 能力绑定到项目中，让中断数天或数周后的创作仍能沿用同一套人物设定、写作规则和叙述风格：
+
+1. 创建小说项目，整理题材、简介和基础设定。
+2. 在 Story Canvas 中拆分幕、章节和场景。
+3. 在 Codex 中持续维护人物、地点、世界观和情节线。
+4. 为整本小说启用 Writer Skills，并从已有正文学习项目风格。
+5. 在编辑器中写作，让 AI 助手读取项目上下文并提供辅助。
 
 ## 核心能力
 
-- 项目与长篇作品管理：小说、系列、短篇集、剧本等。
-- 章节编辑：Tiptap 富文本编辑器、自动保存、字数统计和并发修改检测。
-- Story Canvas：从故事前提扩展为幕、章节、场景节点，并可提升为正式章节。
-- Codex：管理人物、地点、世界观资料和情节点。
-- AI 写作助手：读取当前项目标题、类型、题材、简介和人物信息作为上下文。
-- Writer Skills：为整本小说启用可复用写作方法，支持 Markdown/JSON 导入。
-- 持久风格记忆：从已有章节提炼叙述声音、节奏、视角、对话、意象和禁忌项。
-- 自带模型密钥：支持 OpenRouter、OpenAI、Anthropic、Groq、Gemini、Cohere。
-- Ollama：本地开发时可以直接连接本机模型。
-- Workspace：成员邀请、owner/admin/member 角色、活动 Workspace 切换。
-- 超级管理员：查看所有用户和 Workspace，启用或禁用账号。
-- Markdown 导出。
-- D1 Time Travel 恢复和 SQL 导出。
+| 能力 | 当前实现 |
+| --- | --- |
+| 长篇项目管理 | 支持小说、系列、短篇集、剧本等作品类型 |
+| 章节编辑 | Tiptap 富文本、自动保存、字数统计、并发修改检测、Markdown 导出 |
+| Story Canvas | 从故事前提扩展幕、章节和场景，并将节点提升为正式章节 |
+| 小说设定库 | 管理人物、地点、世界观、情节线、笔记与灵感 |
+| AI 写作助手 | 自动注入项目、人物、Writer Skills 和风格记忆 |
+| Writer Skills | 项目级启停、编辑、Markdown/JSON 导入和三套内置方法 |
+| 持久风格学习 | 从正文提炼声音、节奏、视角、对话、意象和避免项 |
+| 国产模型 | Kimi、DeepSeek、通义千问、MiniMax |
+| 国际模型 | OpenRouter、OpenAI、Anthropic、Gemini、Groq、Cohere |
+| 本地模型 | Ollama 服务地址与默认模型网页配置 |
+| 中英文界面 | 自动识别浏览器语言、手动切换并持久保存 |
+| Workspace | 成员邀请、角色权限和活动 Workspace 切换 |
+| 系统管理 | 固定超级管理员、用户列表、禁用账号、查看全部 Workspace |
+| Cloudflare | Worker 托管 API 与静态资源，D1 保存业务数据 |
+| 数据保护 | AI Key AES-GCM 加密、D1 Time Travel、SQL 导出与恢复脚本 |
 
 ## 技术架构
 
@@ -35,7 +60,7 @@ Browser
                  └─ AI Provider / Ollama
 ```
 
-生产环境由一个 Cloudflare Worker 同时提供 API 和前端静态资源。小说正文、项目资料、用户、Session、Workspace 和加密后的 AI Key 均保存在 D1。
+生产环境由一个 Cloudflare Worker 同时提供 API 和前端静态资源。小说正文、章节、项目资料、用户、Session、Workspace、Writer Skills、风格记忆和加密后的 AI Key 均保存在 D1；代码仓库不会保存用户小说数据。
 
 ## 快速开始
 
@@ -103,7 +128,7 @@ bun dev
 
 - Web：http://localhost:3001
 - API：http://localhost:3000
-- 健康检查：http://localhost:3000/health
+- 健康检查：http://localhost:3000/api/health
 
 也可以分别启动：
 
@@ -155,14 +180,18 @@ Dashboard → AI Models → Connect
 | Provider | 配置方式 | 当前默认模型 |
 | --- | --- | --- |
 | OpenRouter | OAuth PKCE 或手动 API Key | `openrouter/auto` |
-| OpenAI | API Key | `gpt-4o-mini` |
-| Anthropic | API Key | `claude-haiku-4-5` |
+| Kimi / Moonshot AI | API Key、模型 ID、API 地址 | `kimi-k3` |
+| DeepSeek | API Key、模型 ID、API 地址 | `deepseek-v4-pro` |
+| 通义千问 / Qwen | API Key、模型 ID、API 地址 | `qwen3.8-max` |
+| MiniMax | API Key、模型 ID、API 地址 | `MiniMax-M3` |
+| OpenAI | API Key、模型 ID、API 地址 | `gpt-5.6` |
+| Anthropic | API Key、模型 ID | `claude-sonnet-5` |
 | Groq | API Key | `llama-3.3-70b-versatile` |
-| Gemini | API Key | `gemini-2.0-flash` |
+| Gemini | API Key、模型 ID、API 地址 | `gemini-3.6-flash` |
 | Cohere | API Key | `command-r-08-2024` |
-| Ollama | 服务 URL，无需 Key | `llama3.2` |
+| Ollama | 服务 URL、模型 ID，无需 Key | `qwen3` |
 
-当前 AI 聊天页面会使用第一个启用的 Provider，若存在 `isDefault` Provider 则优先使用它。后端 API 支持通过 `model` 参数临时覆盖模型，但网页端尚未提供通用模型选择器。
+连接 Provider 时可在网页中直接选择或输入默认模型。生成时的模型优先级为：请求显式传入的 `model`、网页保存的默认模型、服务端内置默认模型。当前 AI 聊天页面会使用第一个启用的 Provider，若存在 `isDefault` Provider 则优先使用它。
 
 ### OpenRouter
 
@@ -171,6 +200,19 @@ Dashboard → AI Models → Connect
 3. 选择 OpenRouter。
 4. 完成 OAuth，或切换到手动 API Key。
 5. 创建项目，在写作页面打开 AI 助手测试。
+
+### Kimi / DeepSeek / 通义千问 / MiniMax
+
+四家服务均通过 OpenAI-compatible Chat Completions 接口接入。网页会提供推荐模型和默认地址，也允许按账户地区、Workspace 或网关配置修改：
+
+| Provider | 默认地址 | 可选地址或注意事项 |
+| --- | --- | --- |
+| Kimi | `https://api.moonshot.cn/v1` | 国际站可改为 `https://api.moonshot.ai/v1` |
+| DeepSeek | `https://api.deepseek.com` | 可填写完整 `/chat/completions` 地址 |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 新版或企业账户可填写地域/Workspace 专属地址 |
+| MiniMax | `https://api.minimaxi.com/v1` | 国际站可改为 `https://api.minimax.io/v1` |
+
+国内站与国际站的 API Key 通常不可混用，应选择 Key 创建地区对应的地址。ModernNovel 会自动补全 `/chat/completions`，填写完整地址时不会重复追加。
 
 ### OpenAI / Anthropic / Groq / Gemini / Cohere
 
@@ -185,10 +227,10 @@ Dashboard → AI Models → Connect
 
 ```bash
 ollama serve
-ollama pull llama3.2
+ollama pull qwen3
 ```
 
-在 **AI Models → Ollama** 中填写：
+在 **AI Models → Ollama** 中填写服务地址和已经通过 `ollama pull` 安装的模型 ID：
 
 ```text
 http://localhost:11434
@@ -271,17 +313,40 @@ JSON 格式支持 `name`、`description`、`instructions`、`checklist`、`examp
 
 学习需要至少 200 字符的小说正文以及一个可用 AI Provider。为避免在自动保存时产生不可控模型费用，当前由用户手动点击学习；小说风格发生明显变化后可以再次运行，系统会更新同一份项目记忆。
 
-## Cloudflare 部署
+## 部署到 Cloudflare
 
-### 1. 创建 D1
+麻豆小说采用单 Worker 部署：Vite 先构建前端，Wrangler 再把 Hono API 和 `apps/web/dist` 静态资源一起发布。生产数据存储在 Cloudflare D1，模型请求由 Worker 直接调用用户配置的 Provider。
+
+### 部署前准备
+
+- 一个 Cloudflare 账号。
+- 已安装 Bun 1.3+ 和 Node.js 22+。
+- 一个准备绑定的域名；也可以先使用 `*.workers.dev` 地址。
+- 用于超级管理员的邮箱和强密码。
+- 三个互不相同的生产 Secret：`BETTER_AUTH_SECRET`、`ADMIN_PASSWORD`、`ENCRYPTION_KEY`。
+
+### 1. 登录并创建 D1
 
 ```bash
 cd apps/server
 bunx wrangler login
-bunx wrangler d1 create modernnovel
+bunx wrangler d1 create madou-novel
 ```
 
-把输出的 `database_id` 和数据库名称填写到 `apps/server/wrangler.jsonc`。
+把命令输出的 `database_id` 填入 `apps/server/wrangler.jsonc` 的 `d1_databases`：
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "madou-novel",
+      "database_id": "替换为真实 database_id",
+      "migrations_dir": "src/db/migrations"
+    }
+  ]
+}
+```
 
 ### 2. 配置公开变量
 
@@ -296,7 +361,18 @@ bunx wrangler d1 create modernnovel
 }
 ```
 
-### 3. 配置 Secret
+如果暂时使用 Workers 默认域名，请把两个 URL 都改为实际的 `https://<worker-name>.<subdomain>.workers.dev`，不要保留示例地址。
+
+### 3. 创建生产 Secret
+
+先生成两个随机值：
+
+```bash
+openssl rand -base64 48 # BETTER_AUTH_SECRET
+openssl rand -base64 32 # ENCRYPTION_KEY
+```
+
+然后在 `apps/server` 目录中逐个录入，Wrangler 会安全上传且不会把值写进仓库：
 
 ```bash
 bunx wrangler secret put BETTER_AUTH_SECRET
@@ -306,15 +382,55 @@ bunx wrangler secret put ENCRYPTION_KEY
 
 如果需要邀请邮件和密码重置，还必须在 Cloudflare 配置 Email Sending，并把发件地址修改为已验证域名。邮箱验证在当前 POC 中默认关闭。
 
-### 4. 迁移和部署
+### 4. 初始化生产数据库
 
 ```bash
 bunx wrangler d1 migrations apply DB --remote
+```
+
+第一次部署前必须完成迁移，否则注册、登录和项目接口会因为缺少数据表而失败。
+
+### 5. 构建并部署
+
+```bash
 cd ../..
 bun deploy
 ```
 
 Worker 会同时部署 API 和 `apps/web/dist` 静态资源。
+
+### 6. 绑定域名
+
+在 Cloudflare Dashboard 中打开 **Workers & Pages → 你的 Worker → Settings → Domains & Routes**，添加自定义域名。绑定后同步修改：
+
+- `apps/server/wrangler.jsonc` 中的 `CORS_ORIGIN`。
+- `apps/server/wrangler.jsonc` 中的 `BETTER_AUTH_URL`。
+- Better Auth 或 OAuth Provider 中配置的回调地址。
+
+重新执行 `bun deploy` 让配置生效。
+
+### 7. 部署后检查
+
+1. 打开 `https://你的域名/api/health`，确认 Worker 和 D1 可访问。
+2. 使用 `ADMIN_EMAIL` 与 `ADMIN_PASSWORD` 登录。
+3. 创建测试项目并输入一段正文，确认自动保存正常。
+4. 在 **AI 模型** 页面连接一个 Provider，不要把 Key 写入环境文件或仓库。
+5. 在 Cloudflare D1 控制台确认项目、章节和用户记录已经写入。
+6. 立即执行一次 `bun db:backup`，验证备份权限和保存位置。
+
+### Cloudflare 中的数据位置
+
+| 数据 | 存储位置 |
+| --- | --- |
+| 用户、Session、Workspace、邀请 | Cloudflare D1 |
+| 小说项目、章节和设定 | Cloudflare D1 |
+| Writer Skills 与项目风格记忆 | Cloudflare D1 |
+| AI Provider 配置 | Cloudflare D1 |
+| AI API Key | AES-GCM 加密后存入 Cloudflare D1 |
+| 前端静态资源 | Worker Assets |
+| 生产 Secret | Cloudflare Workers Secrets |
+
+Cloudflare D1 是 SQLite 兼容数据库。它不是浏览器本地存储，因此更换电脑或重新部署前端不会丢失小说；删除 D1 数据库、执行错误迁移或恢复操作则可能造成数据丢失，生产环境必须保留备份。
 
 ## D1 备份与恢复
 
@@ -360,7 +476,7 @@ ModernNovel/
 | `bun dev:web` | 仅启动前端 |
 | `bun dev:server` | 仅启动 Worker |
 | `bun build` | 构建完整应用 |
-| `bun test` | 运行 Web 和 Server 测试 |
+| `bun run test` | 运行 Web 和 Server 测试 |
 | `bun check-types` | TypeScript 检查 |
 | `bun lint` | Biome 检查 |
 | `bun quality` | 类型检查和 lint |
@@ -373,7 +489,7 @@ ModernNovel/
 
 - Writer Skill 当前只支持项目级绑定，尚无 Workspace 级共享库和语义检索。
 - 风格记忆由用户手动刷新，尚未自动检测章节风格漂移。
-- 网页端尚无通用模型选择器、温度和最大 Token 配置。
+- 网页端已支持 Provider 默认模型配置；单次请求的温度和最大 Token 配置尚未开放。
 - Ollama 生产部署需要可由 Worker 访问的安全 HTTPS 网关。
 - 团队成员可以共享 Workspace，但实时多人编辑尚未实现。
 - 邮件发送依赖 Cloudflare 已验证的发件域名。
@@ -390,7 +506,7 @@ ModernNovel/
 ## 测试
 
 ```bash
-bun test
+bun run test
 bun check-types
 bun lint
 ```

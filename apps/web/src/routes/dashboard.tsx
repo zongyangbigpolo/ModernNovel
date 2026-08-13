@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import UserMenu from "@/components/user-menu"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   const { data: session } = authClient.useSession()
+  const { t } = useI18n()
 
   return (
     <SidebarProvider>
@@ -58,14 +60,14 @@ function DashboardLayout() {
 
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Writing</SidebarGroupLabel>
+              <SidebarGroupLabel>{t("dashboard.shell.section.writing")}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link to="/dashboard/projects">
                         <BookOpen />
-                        <span>My Projects</span>
+                        <span>{t("dashboard.shell.nav.projects")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -75,14 +77,14 @@ function DashboardLayout() {
 
             {session?.user.role === "superadmin" && (
               <SidebarGroup>
-                <SidebarGroupLabel>System</SidebarGroupLabel>
+                <SidebarGroupLabel>{t("dashboard.shell.section.system")}</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
                         <Link to="/dashboard/admin">
                           <Shield />
-                          <span>Administration</span>
+                          <span>{t("dashboard.shell.nav.administration")}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -92,14 +94,14 @@ function DashboardLayout() {
             )}
 
             <SidebarGroup>
-              <SidebarGroupLabel>Organization</SidebarGroupLabel>
+              <SidebarGroupLabel>{t("dashboard.shell.section.organization")}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link to="/dashboard/team">
                         <Users />
-                        <span>Team</span>
+                        <span>{t("dashboard.shell.nav.team")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -107,7 +109,7 @@ function DashboardLayout() {
                     <SidebarMenuButton asChild>
                       <Link to="/dashboard/settings">
                         <Settings />
-                        <span>Settings</span>
+                        <span>{t("dashboard.shell.nav.settings")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -116,14 +118,14 @@ function DashboardLayout() {
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel>AI & Tools</SidebarGroupLabel>
+              <SidebarGroupLabel>{t("dashboard.shell.section.aiTools")}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link to="/dashboard/ai">
                         <Brain />
-                        <span>AI Models</span>
+                        <span>{t("dashboard.shell.nav.aiModels")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -57,28 +57,44 @@ const UPSTREAM_ERROR_PREVIEW_CHARS = 300
 // Providers that expose an OpenAI-compatible chat completions endpoint
 const OPENAI_COMPATIBLE = {
   openrouter: {
-    url: "https://openrouter.ai/api/v1/chat/completions",
+    baseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "openrouter/auto",
   },
   openai: {
-    url: "https://api.openai.com/v1/chat/completions",
-    defaultModel: "gpt-4o-mini",
+    baseUrl: "https://api.openai.com/v1",
+    defaultModel: "gpt-5.6",
   },
   groq: {
-    url: "https://api.groq.com/openai/v1/chat/completions",
+    baseUrl: "https://api.groq.com/openai/v1",
     defaultModel: "llama-3.3-70b-versatile",
   },
   gemini: {
-    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    defaultModel: "gemini-2.0-flash",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    defaultModel: "gemini-3.6-flash",
   },
   cohere: {
-    url: "https://api.cohere.ai/compatibility/v1/chat/completions",
+    baseUrl: "https://api.cohere.ai/compatibility/v1",
     defaultModel: "command-r-08-2024",
+  },
+  kimi: {
+    baseUrl: "https://api.moonshot.cn/v1",
+    defaultModel: "kimi-k3",
+  },
+  deepseek: {
+    baseUrl: "https://api.deepseek.com",
+    defaultModel: "deepseek-v4-pro",
+  },
+  qwen: {
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    defaultModel: "qwen3.8-max",
+  },
+  minimax: {
+    baseUrl: "https://api.minimaxi.com/v1",
+    defaultModel: "MiniMax-M3",
   },
 } as const
 
-const ANTHROPIC_DEFAULT_MODEL = "claude-haiku-4-5"
+const ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-5"
 const OLLAMA_DEFAULT_URL = "http://localhost:11434"
 const OLLAMA_DEFAULT_MODEL = "llama3.2"
 const TRAILING_SLASH_PATTERN = /\/$/
@@ -308,6 +324,16 @@ function parseProviderConfig(raw: string | null): Record<string, unknown> {
   }
 }
 
+function getConfiguredString(config: Record<string, unknown>, key: string): string | undefined {
+  const value = config[key]
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}
+
+function toChatCompletionsUrl(baseUrl: string): string {
+  const normalized = baseUrl.replace(TRAILING_SLASH_PATTERN, "")
+  return normalized.endsWith("/chat/completions") ? normalized : `${normalized}/chat/completions`
+}
+
 async function dispatchToProvider(options: {
   provider: string
   apiKey: string | null
@@ -322,19 +348,21 @@ async function dispatchToProvider(options: {
     if (!apiKey) {
       return { error: "Anthropic provider has no API key" }
     }
-    const model = options.model || ANTHROPIC_DEFAULT_MODEL
+    const model =
+      options.model ||
+      getConfiguredString(providerConfig, "defaultModel") ||
+      ANTHROPIC_DEFAULT_MODEL
     return { ...(await callAnthropic({ apiKey, model, system, messages })), model }
   }
 
   if (provider === "ollama") {
-    const baseUrl =
-      typeof providerConfig.apiUrl === "string" ? providerConfig.apiUrl : OLLAMA_DEFAULT_URL
+    const baseUrl = getConfiguredString(providerConfig, "apiUrl") || OLLAMA_DEFAULT_URL
     const model =
-      options.model ||
-      (typeof providerConfig.defaultModel === "string"
-        ? providerConfig.defaultModel
-        : OLLAMA_DEFAULT_MODEL)
-    const url = `${baseUrl.replace(TRAILING_SLASH_PATTERN, "")}/v1/chat/completions`
+      options.model || getConfiguredString(providerConfig, "defaultModel") || OLLAMA_DEFAULT_MODEL
+    const normalizedBaseUrl = baseUrl.replace(TRAILING_SLASH_PATTERN, "")
+    const url = toChatCompletionsUrl(
+      normalizedBaseUrl.endsWith("/v1") ? normalizedBaseUrl : `${normalizedBaseUrl}/v1`
+    )
     return { ...(await callOpenAiCompatible({ url, apiKey, model, system, messages })), model }
   }
 
@@ -346,7 +374,11 @@ async function dispatchToProvider(options: {
     return { error: "Provider has no API key configured" }
   }
 
-  const model = options.model || endpoint.defaultModel
+  const model =
+    options.model || getConfiguredString(providerConfig, "defaultModel") || endpoint.defaultModel
+  const url = toChatCompletionsUrl(
+    getConfiguredString(providerConfig, "apiUrl") || endpoint.baseUrl
+  )
   const extraHeaders =
     provider === "openrouter"
       ? {
@@ -357,7 +389,7 @@ async function dispatchToProvider(options: {
 
   return {
     ...(await callOpenAiCompatible({
-      url: endpoint.url,
+      url,
       apiKey,
       model,
       system,
@@ -498,4 +530,11 @@ aiRouter.post("/chat", requireAuth, async (c: AppContext) => {
 })
 
 export type { ChatMessage, CompletionResult }
-export { aiRouter, buildSystemPrompt, isCompletionFailure, runCompletionForUser }
+export {
+  aiRouter,
+  buildSystemPrompt,
+  dispatchToProvider,
+  isCompletionFailure,
+  runCompletionForUser,
+  toChatCompletionsUrl,
+}

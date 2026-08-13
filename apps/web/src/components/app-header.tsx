@@ -5,13 +5,16 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu"
+import { useI18n } from "@/lib/i18n"
 
+import { LanguageSwitcher } from "./language-switcher"
 import { ModeToggle } from "./mode-toggle"
 import { Button } from "./ui/button"
 import { Logo } from "./ui/logo"
 import UserMenu from "./user-menu"
 
 export default function AppHeader() {
+  const { t } = useI18n()
   const location = useRouterState({
     select: (s) => s.location.pathname,
   })
@@ -20,8 +23,8 @@ export default function AppHeader() {
   const isAuthPage = location === "/login" || location === "/register"
 
   const navigationItems = [
-    { to: "/", label: "Home" },
-    { to: "/dashboard", label: "Dashboard" },
+    { to: "/", label: t("nav.home") },
+    { to: "/dashboard", label: t("nav.dashboard") },
   ].filter((item) => !isIndexPage || (item.to !== "/" && item.to !== "/dashboard"))
 
   return (
@@ -50,18 +53,16 @@ export default function AppHeader() {
           <nav className="flex items-center space-x-2">
             {/* Desktop Navigation */}
             <div className="hidden items-center space-x-2 md:flex">
+              <LanguageSwitcher />
               <ModeToggle />
               {!isAuthPage && <UserMenu />}
             </div>
 
             {/* Mobile Sign In Button */}
             <div className="flex items-center space-x-2 md:hidden">
+              <LanguageSwitcher />
               <ModeToggle />
-              {!isAuthPage && (
-                <Button asChild size="sm">
-                  <Link to="/login">Sign In</Link>
-                </Button>
-              )}
+              {!isAuthPage && <UserMenu compact />}
             </div>
           </nav>
         </div>

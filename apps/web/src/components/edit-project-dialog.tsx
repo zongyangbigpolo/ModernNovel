@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { api, type Project } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface EditProjectForm {
   description: string
@@ -37,8 +38,24 @@ interface EditProjectDialogProps {
   project: Project
 }
 
+const PROJECT_TYPE_KEYS = {
+  novel: "projects.meta.type.novel",
+  trilogy: "projects.meta.type.trilogy",
+  series: "projects.meta.type.series",
+  short_story_collection: "projects.meta.type.short_story_collection",
+  graphic_novel: "projects.meta.type.graphic_novel",
+  screenplay: "projects.meta.type.screenplay",
+} as const
+
+const VISIBILITY_KEYS = {
+  private: "projects.meta.visibility.private",
+  organization: "projects.meta.visibility.organization",
+  public: "projects.meta.visibility.public",
+} as const
+
 export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDialogProps) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const [editForm, setEditForm] = useState<EditProjectForm>({
     title: project.title,
     description: project.description || "",
@@ -48,11 +65,10 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     visibility: project.visibility,
   })
 
-  // Update project mutation
   const updateProjectMutation = useMutation({
     mutationFn: async (data: EditProjectForm) => {
       if (!api.projects.update) {
-        throw new Error("Update method not available")
+        throw new Error(t("projects.editDialog.feedback.updateUnavailable"))
       }
       const result = await api.projects.update(project.id, {
         title: data.title,
@@ -67,27 +83,27 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
       onOpenChange(false)
-      toast.success("Project updated successfully! ✨", {
-        description: "Your changes have been saved.",
+      toast.success(t("projects.editDialog.feedback.updatedTitle"), {
+        description: t("projects.editDialog.feedback.updatedDescription"),
       })
     },
     onError: (error) => {
-      toast.error("Failed to update project", {
-        description: error instanceof Error ? error.message : "Please try again.",
+      toast.error(t("projects.editDialog.feedback.updateFailed"), {
+        description:
+          error instanceof Error ? error.message : t("projects.editDialog.feedback.tryAgain"),
       })
     },
   })
 
   const handleUpdateProject = () => {
     if (!editForm.title.trim()) {
-      toast.error("Title is required")
+      toast.error(t("projects.editDialog.feedback.titleRequired"))
       return
     }
     updateProjectMutation.mutate(editForm)
   }
 
   const handleCancel = () => {
-    // Reset form to original values
     setEditForm({
       title: project.title,
       description: project.description || "",
@@ -103,36 +119,34 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>
-            Update your project details. Changes will be saved immediately.
-          </DialogDescription>
+          <DialogTitle>{t("projects.editDialog.title")}</DialogTitle>
+          <DialogDescription>{t("projects.editDialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Title *</Label>
+            <Label htmlFor="edit-title">{t("projects.editDialog.form.titleLabel")}</Label>
             <Input
               id="edit-title"
               onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-              placeholder="The Great Adventure"
+              placeholder={t("projects.editDialog.form.titlePlaceholder")}
               value={editForm.title}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+            <Label htmlFor="edit-description">{t("common.description")}</Label>
             <Textarea
               id="edit-description"
               onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="A brief description of your project..."
+              placeholder={t("projects.editDialog.form.descriptionPlaceholder")}
               value={editForm.description}
             />
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-type">Project Type</Label>
+              <Label htmlFor="edit-type">{t("projects.editDialog.form.projectType")}</Label>
               <Select
                 onValueChange={(
                   value:
@@ -149,29 +163,35 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="novel">Novel</SelectItem>
-                  <SelectItem value="trilogy">Trilogy</SelectItem>
-                  <SelectItem value="series">Series</SelectItem>
-                  <SelectItem value="short_story_collection">Short Story Collection</SelectItem>
-                  <SelectItem value="graphic_novel">Graphic Novel</SelectItem>
-                  <SelectItem value="screenplay">Screenplay</SelectItem>
+                  <SelectItem value="novel">{t(PROJECT_TYPE_KEYS.novel)}</SelectItem>
+                  <SelectItem value="trilogy">{t(PROJECT_TYPE_KEYS.trilogy)}</SelectItem>
+                  <SelectItem value="series">{t(PROJECT_TYPE_KEYS.series)}</SelectItem>
+                  <SelectItem value="short_story_collection">
+                    {t(PROJECT_TYPE_KEYS.short_story_collection)}
+                  </SelectItem>
+                  <SelectItem value="graphic_novel">
+                    {t(PROJECT_TYPE_KEYS.graphic_novel)}
+                  </SelectItem>
+                  <SelectItem value="screenplay">{t(PROJECT_TYPE_KEYS.screenplay)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="edit-genre">Genre</Label>
+                <Label htmlFor="edit-genre">{t("projects.editDialog.form.genre")}</Label>
                 <Input
                   id="edit-genre"
                   onChange={(e) => setEditForm((prev) => ({ ...prev, genre: e.target.value }))}
-                  placeholder="e.g., Fantasy, Sci-Fi"
+                  placeholder={t("projects.editDialog.form.genrePlaceholder")}
                   value={editForm.genre}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-targetWordCount">Target Words</Label>
+                <Label htmlFor="edit-targetWordCount">
+                  {t("projects.editDialog.form.targetWords")}
+                </Label>
                 <Input
                   id="edit-targetWordCount"
                   onChange={(e) =>
@@ -185,7 +205,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-visibility">Visibility</Label>
+              <Label htmlFor="edit-visibility">{t("projects.editDialog.form.visibility")}</Label>
               <Select
                 onValueChange={(value: "private" | "organization" | "public") =>
                   setEditForm((prev) => ({ ...prev, visibility: value }))
@@ -196,9 +216,9 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="private">Private</SelectItem>
-                  <SelectItem value="organization">Organization</SelectItem>
-                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value="private">{t(VISIBILITY_KEYS.private)}</SelectItem>
+                  <SelectItem value="organization">{t(VISIBILITY_KEYS.organization)}</SelectItem>
+                  <SelectItem value="public">{t(VISIBILITY_KEYS.public)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -207,10 +227,12 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
 
         <DialogFooter>
           <Button onClick={handleCancel} variant="outline">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button disabled={updateProjectMutation.isPending} onClick={handleUpdateProject}>
-            {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
+            {updateProjectMutation.isPending
+              ? t("projects.editDialog.actions.updating")
+              : t("projects.editDialog.actions.updateProject")}
           </Button>
         </DialogFooter>
       </DialogContent>

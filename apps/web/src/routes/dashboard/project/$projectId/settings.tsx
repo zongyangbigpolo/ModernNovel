@@ -26,14 +26,52 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { type WriterSkill, writerSkillsApi } from "@/lib/api/writer-skills"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/project/$projectId/settings")({
   component: ProjectSettingsPage,
 })
 
+const BUILT_IN_SKILL_TRANSLATIONS: Record<string, { checklistItems: number; prefix: string }> = {
+  "builtin-character-interaction-dynamics": {
+    checklistItems: 4,
+    prefix: "projects.detail.settings.builtIns.characterInteraction",
+  },
+  "builtin-parameterized-prose-practice": {
+    checklistItems: 5,
+    prefix: "projects.detail.settings.builtIns.parameterizedProse",
+  },
+  "builtin-stateful-chapter-continuity": {
+    checklistItems: 4,
+    prefix: "projects.detail.settings.builtIns.chapterContinuity",
+  },
+}
+
+function localizeBuiltInSkill(
+  skill: WriterSkill,
+  locale: string,
+  t: (key: string) => string
+): WriterSkill {
+  const translation = BUILT_IN_SKILL_TRANSLATIONS[skill.id]
+  if (locale !== "zh-CN" || !skill.builtIn || !translation) {
+    return skill
+  }
+
+  return {
+    ...skill,
+    name: t(`${translation.prefix}.name`),
+    description: t(`${translation.prefix}.description`),
+    instructions: t(`${translation.prefix}.instructions`),
+    checklist: Array.from({ length: translation.checklistItems }, (_, index) =>
+      t(`${translation.prefix}.checklist.${index + 1}`)
+    ),
+  }
+}
+
 function ProjectSettingsPage() {
   const { projectId } = Route.useParams()
   const queryClient = useQueryClient()
+  const { locale, t } = useI18n()
   const [format, setFormat] = useState<"markdown" | "json">("markdown")
   const [content, setContent] = useState("")
   const [editingSkill, setEditingSkill] = useState<WriterSkill | null>(null)
@@ -65,7 +103,7 @@ function ProjectSettingsPage() {
       await writerSkillsApi.setEnabled(projectId, skill.id, true)
       setContent("")
       await refresh()
-      toast.success("Writer Skill imported")
+      toast.success(t("projects.detail.settings.feedback.imported"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -73,14 +111,14 @@ function ProjectSettingsPage() {
     mutationFn: (skillId: string) => writerSkillsApi.delete(projectId, skillId),
     onSuccess: async () => {
       await refresh()
-      toast.success("Writer Skill deleted")
+      toast.success(t("projects.detail.settings.feedback.deleted"))
     },
     onError: (error) => toast.error(error.message),
   })
   const editMutation = useMutation({
     mutationFn: () => {
       if (!editingSkill) {
-        throw new Error("No Writer Skill selected")
+        throw new Error(t("projects.detail.settings.feedback.noSkillSelected"))
       }
       return writerSkillsApi.update(projectId, editingSkill.id, {
         name: editName,
@@ -95,7 +133,7 @@ function ProjectSettingsPage() {
     onSuccess: async () => {
       setEditingSkill(null)
       await refresh()
-      toast.success("Writer Skill updated")
+      toast.success(t("projects.detail.settings.feedback.updated"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -103,22 +141,20 @@ function ProjectSettingsPage() {
     mutationFn: () => writerSkillsApi.learn(projectId),
     onSuccess: async () => {
       await refresh()
-      toast.success("Project style memory updated")
+      toast.success(t("projects.detail.settings.feedback.learned"))
     },
     onError: (error) => toast.error(error.message),
   })
 
   const state = skillsQuery.data
+  const memory = memoryQuery.data?.memory
 
   return (
     <div className="h-full overflow-auto p-6">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
-          <h2 className="font-semibold text-2xl">Writer Skills</h2>
-          <p className="text-muted-foreground">
-            Skills and learned style memory are attached to this novel and applied to every future
-            AI conversation.
-          </p>
+          <h2 className="font-semibold text-2xl">{t("projects.detail.settings.title")}</h2>
+          <p className="text-muted-foreground">{t("projects.detail.settings.description")}</p>
         </div>
 
         <Card>
@@ -127,40 +163,53 @@ function ProjectSettingsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="h-5 w-5" />
-                  Persistent style memory
+                  {t("projects.detail.settings.memory.title")}
                 </CardTitle>
                 <CardDescription>
-                  Analyze a bounded sample of the manuscript and remember its voice, rhythm,
-                  viewpoint, dialogue, imagery, and pacing.
+                  {t("projects.detail.settings.memory.description")}
                 </CardDescription>
               </div>
               <Button
                 disabled={!state?.canManage || learnMutation.isPending}
                 onClick={() => learnMutation.mutate()}
               >
-                {learnMutation.isPending ? "Learning..." : "Learn from manuscript"}
+                {learnMutation.isPending
+                  ? t("projects.detail.settings.memory.learning")
+                  : t("projects.detail.settings.memory.learn")}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {memoryQuery.data?.memory ? (
+            {memory ? (
               <div className="grid gap-4 text-sm md:grid-cols-2">
-                <MemoryItem label="Voice" value={memoryQuery.data.memory.profile.voice} />
                 <MemoryItem
-                  label="Sentence rhythm"
-                  value={memoryQuery.data.memory.profile.sentenceRhythm}
+                  label={t("projects.detail.settings.memory.voice")}
+                  value={memory.profile.voice}
                 />
                 <MemoryItem
-                  label="Point of view and tense"
-                  value={memoryQuery.data.memory.profile.povTense}
+                  label={t("projects.detail.settings.memory.sentenceRhythm")}
+                  value={memory.profile.sentenceRhythm}
                 />
-                <MemoryItem label="Dialogue" value={memoryQuery.data.memory.profile.dialogue} />
-                <MemoryItem label="Imagery" value={memoryQuery.data.memory.profile.imagery} />
-                <MemoryItem label="Pacing" value={memoryQuery.data.memory.profile.pacing} />
+                <MemoryItem
+                  label={t("projects.detail.settings.memory.povTense")}
+                  value={memory.profile.povTense}
+                />
+                <MemoryItem
+                  label={t("projects.detail.settings.memory.dialogue")}
+                  value={memory.profile.dialogue}
+                />
+                <MemoryItem
+                  label={t("projects.detail.settings.memory.imagery")}
+                  value={memory.profile.imagery}
+                />
+                <MemoryItem
+                  label={t("projects.detail.settings.memory.pacing")}
+                  value={memory.profile.pacing}
+                />
                 <div className="md:col-span-2">
-                  <div className="font-medium">Avoid</div>
+                  <div className="font-medium">{t("projects.detail.settings.memory.avoid")}</div>
                   <div className="mt-1 flex flex-wrap gap-2">
-                    {memoryQuery.data.memory.profile.avoid.map((item) => (
+                    {memory.profile.avoid.map((item) => (
                       <Badge key={item} variant="outline">
                         {item}
                       </Badge>
@@ -168,90 +217,103 @@ function ProjectSettingsPage() {
                   </div>
                 </div>
                 <p className="text-muted-foreground md:col-span-2">
-                  Learned from {memoryQuery.data.memory.sourceChapterIds.length} chapter(s) and{" "}
-                  {memoryQuery.data.memory.sourceWordCount.toLocaleString()} words, updated{" "}
-                  {new Date(memoryQuery.data.memory.updatedAt).toLocaleString()}.
+                  {t("projects.detail.settings.memory.learnedFrom", {
+                    chapters: memory.sourceChapterIds.length.toLocaleString(locale),
+                    words: memory.sourceWordCount.toLocaleString(locale),
+                    updatedAt: new Date(memory.updatedAt).toLocaleString(locale),
+                  })}
                 </p>
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">
-                No style memory yet. Write some chapters, configure an AI Provider, then run
-                learning.
+                {t("projects.detail.settings.memory.empty")}
               </p>
             )}
           </CardContent>
         </Card>
 
         <div className="grid gap-4">
-          {(state?.skills ?? []).map((skill) => (
-            <Card key={skill.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{skill.name}</CardTitle>
-                      <Badge variant={skill.builtIn ? "secondary" : "outline"}>
-                        {skill.builtIn ? "Built in" : "Imported"}
-                      </Badge>
+          {(state?.skills ?? []).map((skill) => {
+            const displaySkill = localizeBuiltInSkill(skill, locale, t)
+
+            return (
+              <Card key={skill.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{displaySkill.name}</CardTitle>
+                        <Badge variant={skill.builtIn ? "secondary" : "outline"}>
+                          {skill.builtIn
+                            ? t("projects.detail.settings.skills.builtIn")
+                            : t("projects.detail.settings.skills.imported")}
+                        </Badge>
+                      </div>
+                      <CardDescription>{displaySkill.description}</CardDescription>
                     </div>
-                    <CardDescription>{skill.description}</CardDescription>
+                    <div className="flex items-center gap-3">
+                      {!skill.builtIn && state?.canManage && (
+                        <>
+                          <Button
+                            aria-label={t("projects.detail.settings.skills.editAria", {
+                              name: displaySkill.name,
+                            })}
+                            onClick={() => {
+                              setEditingSkill(skill)
+                              setEditName(skill.name)
+                              setEditDescription(skill.description ?? "")
+                              setEditInstructions(skill.instructions)
+                              setEditChecklist(skill.checklist.join("\n"))
+                            }}
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            aria-label={t("projects.detail.settings.skills.deleteAria", {
+                              name: displaySkill.name,
+                            })}
+                            disabled={deleteMutation.isPending}
+                            onClick={() => deleteMutation.mutate(skill.id)}
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Switch
+                        checked={skill.binding?.enabled ?? false}
+                        disabled={!state?.canManage || bindingMutation.isPending}
+                        onCheckedChange={(enabled) =>
+                          bindingMutation.mutate({ skillId: skill.id, enabled })
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {!skill.builtIn && state?.canManage && (
-                      <>
-                        <Button
-                          aria-label={`Edit ${skill.name}`}
-                          onClick={() => {
-                            setEditingSkill(skill)
-                            setEditName(skill.name)
-                            setEditDescription(skill.description ?? "")
-                            setEditInstructions(skill.instructions)
-                            setEditChecklist(skill.checklist.join("\n"))
-                          }}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          aria-label={`Delete ${skill.name}`}
-                          disabled={deleteMutation.isPending}
-                          onClick={() => deleteMutation.mutate(skill.id)}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Switch
-                      checked={skill.binding?.enabled ?? false}
-                      disabled={!state?.canManage || bindingMutation.isPending}
-                      onCheckedChange={(enabled) =>
-                        bindingMutation.mutate({ skillId: skill.id, enabled })
-                      }
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="whitespace-pre-wrap">{skill.instructions}</p>
-                {skill.checklist.length > 0 && (
-                  <ul className="list-inside list-disc text-muted-foreground">
-                    {skill.checklist.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                )}
-                {(skill.sourceUrl || skill.sourceLicense) && (
-                  <p className="text-muted-foreground text-xs">
-                    Source: {skill.sourceUrl || "Original"} · License:{" "}
-                    {skill.sourceLicense || "Unknown"}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <p className="whitespace-pre-wrap">{displaySkill.instructions}</p>
+                  {displaySkill.checklist.length > 0 && (
+                    <ul className="list-inside list-disc text-muted-foreground">
+                      {displaySkill.checklist.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {(skill.sourceUrl || skill.sourceLicense) && (
+                    <p className="text-muted-foreground text-xs">
+                      {t("projects.detail.settings.skills.sourceLine", {
+                        source: skill.sourceUrl || t("projects.detail.settings.skills.original"),
+                        license: skill.sourceLicense || t("common.unknown"),
+                      })}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         {state?.canManage && (
@@ -259,16 +321,13 @@ function ProjectSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileUp className="h-5 w-5" />
-                Import a Writer Skill
+                {t("projects.detail.settings.import.title")}
               </CardTitle>
-              <CardDescription>
-                Import concise methods, structural rules, and checklists—not full novels or
-                copyrighted passages.
-              </CardDescription>
+              <CardDescription>{t("projects.detail.settings.import.description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="max-w-48 space-y-2">
-                <Label>Format</Label>
+                <Label>{t("projects.detail.settings.import.format")}</Label>
                 <Select
                   onValueChange={(value) => setFormat(value === "json" ? "json" : "markdown")}
                   value={format}
@@ -277,8 +336,12 @@ function ProjectSettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="markdown">Markdown</SelectItem>
-                    <SelectItem value="json">JSON</SelectItem>
+                    <SelectItem value="markdown">
+                      {t("projects.detail.settings.import.formatMarkdown")}
+                    </SelectItem>
+                    <SelectItem value="json">
+                      {t("projects.detail.settings.import.formatJson")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -287,8 +350,8 @@ function ProjectSettingsPage() {
                 onChange={(event) => setContent(event.target.value)}
                 placeholder={
                   format === "markdown"
-                    ? "# Skill name\n\nDescription\n\n## Instructions\n...\n\n## Checklist\n- ..."
-                    : '{\n  "name": "Skill name",\n  "description": "...",\n  "instructions": "...",\n  "checklist": []\n}'
+                    ? t("projects.detail.settings.import.placeholderMarkdown")
+                    : t("projects.detail.settings.import.placeholderJson")
                 }
                 value={content}
               />
@@ -310,7 +373,9 @@ function ProjectSettingsPage() {
                 onClick={() => importMutation.mutate()}
               >
                 <BookOpenCheck className="mr-2 h-4 w-4" />
-                {importMutation.isPending ? "Importing..." : "Import and enable"}
+                {importMutation.isPending
+                  ? t("projects.detail.settings.import.importing")
+                  : t("projects.detail.settings.import.button")}
               </Button>
             </CardContent>
           </Card>
@@ -320,14 +385,12 @@ function ProjectSettingsPage() {
       <Dialog onOpenChange={(open) => !open && setEditingSkill(null)} open={editingSkill !== null}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Writer Skill</DialogTitle>
-            <DialogDescription>
-              Changes affect every future AI conversation for projects using this skill.
-            </DialogDescription>
+            <DialogTitle>{t("projects.detail.settings.edit.title")}</DialogTitle>
+            <DialogDescription>{t("projects.detail.settings.edit.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="skill-name">Name</Label>
+              <Label htmlFor="skill-name">{t("common.name")}</Label>
               <Input
                 id="skill-name"
                 onChange={(event) => setEditName(event.target.value)}
@@ -335,7 +398,7 @@ function ProjectSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="skill-description">Description</Label>
+              <Label htmlFor="skill-description">{t("common.description")}</Label>
               <Textarea
                 id="skill-description"
                 onChange={(event) => setEditDescription(event.target.value)}
@@ -343,7 +406,9 @@ function ProjectSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="skill-instructions">Instructions</Label>
+              <Label htmlFor="skill-instructions">
+                {t("projects.detail.settings.edit.instructions")}
+              </Label>
               <Textarea
                 className="min-h-40"
                 id="skill-instructions"
@@ -352,7 +417,9 @@ function ProjectSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="skill-checklist">Checklist, one item per line</Label>
+              <Label htmlFor="skill-checklist">
+                {t("projects.detail.settings.edit.checklist")}
+              </Label>
               <Textarea
                 id="skill-checklist"
                 onChange={(event) => setEditChecklist(event.target.value)}
@@ -365,7 +432,9 @@ function ProjectSettingsPage() {
               disabled={!(editName.trim() && editInstructions.trim()) || editMutation.isPending}
               onClick={() => editMutation.mutate()}
             >
-              {editMutation.isPending ? "Saving..." : "Save changes"}
+              {editMutation.isPending
+                ? t("common.saving")
+                : t("projects.detail.settings.edit.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

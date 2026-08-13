@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { api, type Project } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/projects")({
   component: ProjectsPage,
@@ -46,9 +47,25 @@ interface CreateProjectForm {
   visibility: "private" | "organization" | "public"
 }
 
+const PROJECT_TYPE_KEYS = {
+  novel: "projects.meta.type.novel",
+  trilogy: "projects.meta.type.trilogy",
+  series: "projects.meta.type.series",
+  short_story_collection: "projects.meta.type.short_story_collection",
+  graphic_novel: "projects.meta.type.graphic_novel",
+  screenplay: "projects.meta.type.screenplay",
+} as const
+
+const VISIBILITY_KEYS = {
+  private: "projects.meta.visibility.private",
+  organization: "projects.meta.visibility.organization",
+  public: "projects.meta.visibility.public",
+} as const
+
 function ProjectsPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [createForm, setCreateForm] = useState<CreateProjectForm>({
@@ -60,7 +77,6 @@ function ProjectsPage() {
     visibility: "private",
   })
 
-  // Fetch projects
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
@@ -69,7 +85,6 @@ function ProjectsPage() {
     },
   })
 
-  // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (data: CreateProjectForm) => {
       const result = await api.projects.create({
@@ -93,17 +108,16 @@ function ProjectsPage() {
         targetWordCount: "",
         visibility: "private",
       })
-      // Drop new writers straight into the editor instead of back on the list
       navigate({ to: "/projects/$projectId/write", params: { projectId: result.id } })
     },
-    onError: (_error) => {
-      toast.error("Failed to create project")
+    onError: () => {
+      toast.error(t("projects.list.feedback.createFailed"))
     },
   })
 
   const handleCreateProject = () => {
     if (!createForm.title.trim()) {
-      toast.error("Title is required")
+      toast.error(t("projects.list.feedback.titleRequired"))
       return
     }
     createProjectMutation.mutate(createForm)
@@ -115,7 +129,7 @@ function ProjectsPage() {
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="text-lg">Loading...</div>
+              <div className="text-lg">{t("common.loading")}</div>
             </div>
           </div>
         </div>
@@ -126,67 +140,64 @@ function ProjectsPage() {
   return (
     <div className="flex-1 overflow-auto p-8">
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
         <div className="mb-8 flex flex-col space-y-6">
-          {/* Breadcrumb */}
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage>Projects</BreadcrumbPage>
+                <BreadcrumbPage>{t("projects.list.breadcrumb")}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
 
-          {/* Title and Action */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-bold text-3xl">My Projects</h1>
-              <p className="mt-2">Manage your writing projects</p>
+              <h1 className="font-bold text-3xl">{t("projects.list.title")}</h1>
+              <p className="mt-2">{t("projects.list.description")}</p>
             </div>
 
             <Dialog onOpenChange={setIsCreateDialogOpen} open={isCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  New Project
+                  {t("projects.list.newProject")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Create New Project</DialogTitle>
+                  <DialogTitle>{t("projects.list.createDialog.title")}</DialogTitle>
                   <DialogDescription>
-                    Start your next writing project. You can always edit these details later.
+                    {t("projects.list.createDialog.description")}
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="title">Title *</Label>
+                    <Label htmlFor="title">{t("projects.list.form.titleLabel")}</Label>
                     <Input
                       id="title"
                       onChange={(e) =>
                         setCreateForm((prev) => ({ ...prev, title: e.target.value }))
                       }
-                      placeholder="The Great Adventure"
+                      placeholder={t("projects.list.form.titlePlaceholder")}
                       value={createForm.title}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{t("common.description")}</Label>
                     <Textarea
                       id="description"
                       onChange={(e) =>
                         setCreateForm((prev) => ({ ...prev, description: e.target.value }))
                       }
-                      placeholder="A brief description of your project..."
+                      placeholder={t("projects.list.form.descriptionPlaceholder")}
                       value={createForm.description}
                     />
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="type">Project Type</Label>
+                      <Label htmlFor="type">{t("projects.list.form.projectType")}</Label>
                       <Select
                         onValueChange={(
                           value:
@@ -203,33 +214,39 @@ function ProjectsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="novel">Novel</SelectItem>
-                          <SelectItem value="trilogy">Trilogy</SelectItem>
-                          <SelectItem value="series">Series</SelectItem>
+                          <SelectItem value="novel">{t(PROJECT_TYPE_KEYS.novel)}</SelectItem>
+                          <SelectItem value="trilogy">{t(PROJECT_TYPE_KEYS.trilogy)}</SelectItem>
+                          <SelectItem value="series">{t(PROJECT_TYPE_KEYS.series)}</SelectItem>
                           <SelectItem value="short_story_collection">
-                            Short Story Collection
+                            {t(PROJECT_TYPE_KEYS.short_story_collection)}
                           </SelectItem>
-                          <SelectItem value="graphic_novel">Graphic Novel</SelectItem>
-                          <SelectItem value="screenplay">Screenplay</SelectItem>
+                          <SelectItem value="graphic_novel">
+                            {t(PROJECT_TYPE_KEYS.graphic_novel)}
+                          </SelectItem>
+                          <SelectItem value="screenplay">
+                            {t(PROJECT_TYPE_KEYS.screenplay)}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="genre">Genre</Label>
+                        <Label htmlFor="genre">{t("projects.list.form.genre")}</Label>
                         <Input
                           id="genre"
                           onChange={(e) =>
                             setCreateForm((prev) => ({ ...prev, genre: e.target.value }))
                           }
-                          placeholder="e.g., Fantasy, Sci-Fi"
+                          placeholder={t("projects.list.form.genrePlaceholder")}
                           value={createForm.genre}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="targetWordCount">Target Words</Label>
+                        <Label htmlFor="targetWordCount">
+                          {t("projects.list.form.targetWords")}
+                        </Label>
                         <Input
                           id="targetWordCount"
                           onChange={(e) =>
@@ -243,7 +260,7 @@ function ProjectsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="visibility">Visibility</Label>
+                      <Label htmlFor="visibility">{t("projects.list.form.visibility")}</Label>
                       <Select
                         onValueChange={(value: "private" | "organization" | "public") =>
                           setCreateForm((prev) => ({ ...prev, visibility: value }))
@@ -254,9 +271,11 @@ function ProjectsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="private">Private</SelectItem>
-                          <SelectItem value="organization">Organization</SelectItem>
-                          <SelectItem value="public">Public</SelectItem>
+                          <SelectItem value="private">{t(VISIBILITY_KEYS.private)}</SelectItem>
+                          <SelectItem value="organization">
+                            {t(VISIBILITY_KEYS.organization)}
+                          </SelectItem>
+                          <SelectItem value="public">{t(VISIBILITY_KEYS.public)}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -265,10 +284,12 @@ function ProjectsPage() {
 
                 <DialogFooter>
                   <Button onClick={() => setIsCreateDialogOpen(false)} variant="outline">
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button disabled={createProjectMutation.isPending} onClick={handleCreateProject}>
-                    {createProjectMutation.isPending ? "Creating..." : "Create Project"}
+                    {createProjectMutation.isPending
+                      ? t("common.creating")
+                      : t("projects.list.actions.createProject")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -276,7 +297,6 @@ function ProjectsPage() {
           </div>
         </div>
 
-        {/* Projects Grid */}
         {projects && projects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project: Project) => (
@@ -286,16 +306,15 @@ function ProjectsPage() {
         ) : (
           <div className="py-12 text-center">
             <BookOpen className="mx-auto mb-4 h-16 w-16 opacity-50" />
-            <h3 className="mb-2 font-medium text-xl">No projects yet</h3>
-            <p className="mb-6">Create your first project to get started writing!</p>
+            <h3 className="mb-2 font-medium text-xl">{t("projects.list.empty.title")}</h3>
+            <p className="mb-6">{t("projects.list.empty.description")}</p>
             <Button className="flex items-center gap-2" onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
-              Create Your First Project
+              {t("projects.list.empty.cta")}
             </Button>
           </div>
         )}
 
-        {/* Edit Project Dialog */}
         {editingProject && (
           <EditProjectDialog
             onOpenChange={(open) => {

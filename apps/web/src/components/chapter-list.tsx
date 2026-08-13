@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api, type Chapter } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 interface ChapterListProps {
@@ -23,31 +24,36 @@ export function ChapterList({
   onSelect,
 }: ChapterListProps) {
   const queryClient = useQueryClient()
+  const { t } = useI18n()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState("")
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["chapters", projectId] })
 
   const createMutation = useMutation({
-    mutationFn: async () => await api.chapters.create(projectId),
+    mutationFn: async () =>
+      await api.chapters.create(
+        projectId,
+        t("editor.chapterList.defaultTitle", { number: chapters.length + 1 })
+      ),
     onSuccess: (result) => {
       refresh()
       onSelect(result.id)
     },
-    onError: () => toast.error("Failed to create chapter"),
+    onError: () => toast.error(t("editor.chapterList.failedCreate")),
   })
 
   const renameMutation = useMutation({
     mutationFn: async ({ chapterId, title }: { chapterId: string; title: string }) =>
       await api.chapters.update(projectId, chapterId, { title }),
     onSuccess: refresh,
-    onError: () => toast.error("Failed to rename chapter"),
+    onError: () => toast.error(t("editor.chapterList.failedRename")),
   })
 
   const reorderMutation = useMutation({
     mutationFn: async (chapterIds: string[]) => await api.chapters.reorder(projectId, chapterIds),
     onSuccess: refresh,
-    onError: () => toast.error("Failed to reorder chapters"),
+    onError: () => toast.error(t("editor.chapterList.failedReorder")),
   })
 
   const deleteMutation = useMutation({
@@ -62,7 +68,7 @@ export function ChapterList({
         }
       }
     },
-    onError: () => toast.error("Failed to delete chapter"),
+    onError: () => toast.error(t("editor.chapterList.failedDelete")),
   })
 
   const startRename = (ch: Chapter) => {
@@ -90,15 +96,16 @@ export function ChapterList({
   }
 
   return (
-    <div className="flex h-full w-60 flex-col border-r bg-muted/20" data-tour="chapters">
+    <div className="flex h-full w-44 flex-col border-r bg-muted/20 sm:w-60" data-tour="chapters">
       <div className="flex items-center justify-between border-b p-3">
-        <span className="font-medium text-sm">Chapters</span>
+        <span className="font-medium text-sm">{t("editor.chapterList.heading")}</span>
         <Button
+          aria-label={t("editor.chapterList.newChapter")}
           className="h-7 w-7 p-0"
           disabled={createMutation.isPending}
           onClick={() => createMutation.mutate()}
           size="sm"
-          title="New chapter"
+          title={t("editor.chapterList.newChapter")}
           type="button"
           variant="ghost"
         >
@@ -108,9 +115,7 @@ export function ChapterList({
 
       <div className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {chapters.length === 0 && (
-          <p className="px-2 py-4 text-muted-foreground text-xs">
-            No chapters yet. Create one to start writing.
-          </p>
+          <p className="px-2 py-4 text-muted-foreground text-xs">{t("editor.chapterList.empty")}</p>
         )}
 
         {chapters.map((ch, index) => (
@@ -146,54 +151,58 @@ export function ChapterList({
                 >
                   <span className="block truncate font-medium text-sm">{ch.title}</span>
                   <span className="block text-muted-foreground text-xs">
-                    {ch.wordCount.toLocaleString()} words
+                    {t("editor.chapterList.wordCount", { count: ch.wordCount.toLocaleString() })}
                   </span>
                 </button>
 
                 <div className="hidden shrink-0 items-center group-hover:flex">
                   <Button
+                    aria-label={t("editor.chapterList.moveUp")}
                     className="h-6 w-6 p-0"
                     disabled={index === 0 || reorderMutation.isPending}
                     onClick={() => move(ch.id, -1)}
                     size="sm"
-                    title="Move up"
+                    title={t("editor.chapterList.moveUp")}
                     type="button"
                     variant="ghost"
                   >
                     <ArrowUp className="h-3 w-3" />
                   </Button>
                   <Button
+                    aria-label={t("editor.chapterList.moveDown")}
                     className="h-6 w-6 p-0"
                     disabled={index === chapters.length - 1 || reorderMutation.isPending}
                     onClick={() => move(ch.id, 1)}
                     size="sm"
-                    title="Move down"
+                    title={t("editor.chapterList.moveDown")}
                     type="button"
                     variant="ghost"
                   >
                     <ArrowDown className="h-3 w-3" />
                   </Button>
                   <Button
+                    aria-label={t("common.rename")}
                     className="h-6 w-6 p-0"
                     onClick={() => startRename(ch)}
                     size="sm"
-                    title="Rename"
+                    title={t("common.rename")}
                     type="button"
                     variant="ghost"
                   >
                     <Pencil className="h-3 w-3" />
                   </Button>
                   <ConfirmDialog
-                    confirmText="Delete"
-                    description={`Delete "${ch.title}" and its content? This cannot be undone.`}
+                    confirmText={t("common.delete")}
+                    description={t("editor.chapterList.deleteDescription", { title: ch.title })}
                     onConfirm={() => deleteMutation.mutate(ch.id)}
-                    title="Delete chapter"
+                    title={t("editor.chapterList.deleteTitle")}
                     variant="destructive"
                   >
                     <Button
+                      aria-label={t("common.delete")}
                       className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                       size="sm"
-                      title="Delete"
+                      title={t("common.delete")}
                       type="button"
                       variant="ghost"
                     >
@@ -216,7 +225,7 @@ export function ChapterList({
         >
           <Link params={{ projectId }} to="/projects/$projectId/canvas">
             <Network className="mr-2 h-4 w-4" />
-            Map your story
+            {t("editor.chapterList.mapYourStory")}
           </Link>
         </Button>
       </div>

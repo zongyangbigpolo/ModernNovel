@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { api, type Project } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/dashboard/")({
 
 function DashboardHome() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const { t } = useI18n()
 
   // Fetch projects for overview
   const {
@@ -35,9 +37,9 @@ function DashboardHome() {
   // Handle error with toast notification
   useEffect(() => {
     if (isError && error) {
-      toast.error("Failed to load projects. Please try refreshing the page.")
+      toast.error(t("dashboard.home.feedback.loadFailedToast"))
     }
-  }, [isError, error])
+  }, [error, isError, t])
 
   const totalWords = projects?.reduce((sum, project) => sum + project.currentWordCount, 0) || 0
   const activeProjects =
@@ -53,12 +55,12 @@ function DashboardHome() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <h2 className="mb-2 font-semibold text-2xl text-destructive">
-                Unable to load dashboard
+                {t("dashboard.home.error.title")}
               </h2>
-              <p className="mb-4 text-muted-foreground">
-                There was a problem loading your writing data. Please try refreshing the page.
-              </p>
-              <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+              <p className="mb-4 text-muted-foreground">{t("dashboard.home.error.description")}</p>
+              <Button onClick={() => window.location.reload()}>
+                {t("dashboard.home.error.refresh")}
+              </Button>
             </div>
           </div>
         </div>
@@ -70,55 +72,69 @@ function DashboardHome() {
     <div className="p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="font-bold text-3xl">Welcome back!</h1>
-          <p className="mt-2 text-muted-foreground">Here's what's happening with your writing.</p>
+          <h1 className="font-bold text-3xl">{t("dashboard.home.welcome.title")}</h1>
+          <p className="mt-2 text-muted-foreground">{t("dashboard.home.welcome.description")}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Total Projects</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t("dashboard.home.stats.totalProjects")}
+              </CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">{projects?.length || 0}</div>
               <p className="text-muted-foreground text-xs">
-                {activeProjects.length} active projects
+                {t("dashboard.home.stats.activeProjects", { count: activeProjects.length })}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Total Words</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t("dashboard.home.stats.totalWords")}
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">{totalWords.toLocaleString()}</div>
-              <p className="text-muted-foreground text-xs">Across all projects</p>
+              <p className="text-muted-foreground text-xs">
+                {t("dashboard.home.stats.acrossAllProjects")}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">This Week</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t("dashboard.home.stats.thisWeek")}
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">0</div>
-              <p className="text-muted-foreground text-xs">Words written</p>
+              <p className="text-muted-foreground text-xs">
+                {t("dashboard.home.stats.wordsWritten")}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Organization</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t("dashboard.home.stats.organization")}
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">1</div>
-              <p className="text-muted-foreground text-xs">Team member</p>
+              <p className="text-muted-foreground text-xs">
+                {t("dashboard.home.stats.teamMember")}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -128,11 +144,11 @@ function DashboardHome() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Recent Projects</CardTitle>
-                <CardDescription>Your latest writing projects</CardDescription>
+                <CardTitle>{t("dashboard.home.recent.title")}</CardTitle>
+                <CardDescription>{t("dashboard.home.recent.description")}</CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
-                <Link to="/dashboard/projects">View All</Link>
+                <Link to="/dashboard/projects">{t("common.viewAll")}</Link>
               </Button>
             </CardHeader>
             <CardContent>
@@ -145,11 +161,11 @@ function DashboardHome() {
               ) : (
                 <div className="py-8 text-center">
                   <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                  <p className="mb-4 text-muted-foreground">No projects yet</p>
+                  <p className="mb-4 text-muted-foreground">{t("dashboard.home.recent.empty")}</p>
                   <Button asChild>
                     <Link to="/dashboard/projects">
                       <Plus className="mr-2 h-4 w-4" />
-                      Create Your First Project
+                      {t("dashboard.home.recent.createFirst")}
                     </Link>
                   </Button>
                 </div>
@@ -160,8 +176,8 @@ function DashboardHome() {
           {/* Writing Progress */}
           <Card>
             <CardHeader>
-              <CardTitle>Writing Progress</CardTitle>
-              <CardDescription>Goal completion across projects</CardDescription>
+              <CardTitle>{t("dashboard.home.progress.title")}</CardTitle>
+              <CardDescription>{t("dashboard.home.progress.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -169,6 +185,8 @@ function DashboardHome() {
                   const progress = project.targetWordCount
                     ? Math.min((project.currentWordCount / project.targetWordCount) * 100, 100)
                     : 0
+                  const currentWords = project.currentWordCount.toLocaleString()
+                  const targetWords = project.targetWordCount?.toLocaleString() || "∞"
 
                   return (
                     <div className="space-y-2" key={project.id}>
@@ -178,8 +196,10 @@ function DashboardHome() {
                       </div>
                       <Progress className="h-2" value={progress} />
                       <p className="text-muted-foreground text-xs">
-                        {project.currentWordCount.toLocaleString()} /{" "}
-                        {project.targetWordCount?.toLocaleString() || "∞"} words
+                        {t("dashboard.home.progress.words", {
+                          current: currentWords,
+                          target: targetWords,
+                        })}
                       </p>
                     </div>
                   )
@@ -187,7 +207,7 @@ function DashboardHome() {
 
                 {activeProjects.length === 0 && (
                   <div className="py-8 text-center text-muted-foreground">
-                    <p>No active projects with word goals</p>
+                    <p>{t("dashboard.home.progress.empty")}</p>
                   </div>
                 )}
               </div>

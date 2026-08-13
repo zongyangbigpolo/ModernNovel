@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 // buildSystemPrompt is pure-ish (only reads via the shared `db`), so we can
 // exercise it directly against the in-memory libsql database without any
@@ -28,12 +28,17 @@ import {
   user,
   writerSkill,
 } from "../db/schema"
+import { isSupportedProvider } from "../lib/ai-provider-types"
 import { applyMigrations, testDb } from "../test/test-db"
-import { buildSystemPrompt } from "./ai"
+import { buildSystemPrompt, dispatchToProvider, toChatCompletionsUrl } from "./ai"
 
 const ORG_ID = "prompt-org"
 const PROJECT_ID = "prompt-project"
 const OWNER_ID = "prompt-owner"
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 beforeAll(async () => {
   await applyMigrations()
@@ -81,6 +86,107 @@ describe("buildSystemPrompt", () => {
     const prompt = await buildSystemPrompt(undefined, ORG_ID)
     expect(prompt).not.toContain("WRITER SKILLS")
     expect(prompt).not.toContain("STYLE MEMORY")
+  })
+
+  describe("AI provider dispatch", () => {
+    it.each([
+      ["kimi", "https://api.moonshot.cn/v1/chat/completions", "kimi-k3"],
+      ["deepseek", "https://api.deepseek.com/chat/completions", "deepseek-v4-pro"],
+    ])("uses the default endpoint and model for %s", async (provider, expectedUrl, expectedModel) => {
+      let requestUrl = ""
+      let requestBody: { model?: string } = {}
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: string | URL | Request, init?: RequestInit) => {
+          requestUrl = String(input)
+          requestBody = JSON.parse(String(init?.body)) as { model?: string }
+          return Promise.resolve(Response.json({ choices: [{ message: { content: "ok" } }] }))
+        })
+      )
+
+      const result = await dispatchToProvider({
+        provider,
+        apiKey: "test-key",
+        providerConfig: {},
+        model: undefined,
+        system: "system",
+        messages: [{ role: "user", content: "hello" }],
+      })
+
+      expect(result).toMatchObject({ message: "ok", model: expectedModel })
+      expect(requestUrl).toBe(expectedUrl)
+      expect(requestBody.model).toBe(expectedModel)
+    })
+
+    it.each([
+      [
+        "qwen",
+        "https://workspace-id.modelstudio.example/v1",
+        "qwen-custom",
+        "https://workspace-id.modelstudio.example/v1/chat/completions",
+      ],
+      [
+        "minimax",
+        "https://api.minimax.io/v1",
+        "MiniMax-M2.7-highspeed",
+        "https://api.minimax.io/v1/chat/completions",
+      ],
+    ])("honors the configured endpoint and model for %s", async (provider, apiUrl, defaultModel, expectedUrl) => {
+      let requestUrl = ""
+      let requestBody: { model?: string } = {}
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: string | URL | Request, init?: RequestInit) => {
+          requestUrl = String(input)
+          requestBody = JSON.parse(String(init?.body)) as { model?: string }
+          return Promise.resolve(Response.json({ choices: [{ message: { content: "ok" } }] }))
+        })
+      )
+
+      await dispatchToProvider({
+        provider,
+        apiKey: "test-key",
+        providerConfig: { apiUrl, defaultModel },
+        model: undefined,
+        system: "system",
+        messages: [{ role: "user", content: "hello" }],
+      })
+
+      expect(requestUrl).toBe(expectedUrl)
+      expect(requestBody.model).toBe(defaultModel)
+    })
+
+    it("does not duplicate full chat-completions or Ollama v1 URL segments", async () => {
+      expect(toChatCompletionsUrl("https://example.com/v1/chat/completions/")).toBe(
+        "https://example.com/v1/chat/completions"
+      )
+
+      let requestUrl = ""
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: string | URL | Request) => {
+          requestUrl = String(input)
+          return Promise.resolve(Response.json({ choices: [{ message: { content: "ok" } }] }))
+        })
+      )
+
+      await dispatchToProvider({
+        provider: "ollama",
+        apiKey: null,
+        providerConfig: { apiUrl: "http://localhost:11434/v1" },
+        model: undefined,
+        system: "system",
+        messages: [{ role: "user", content: "hello" }],
+      })
+
+      expect(requestUrl).toBe("http://localhost:11434/v1/chat/completions")
+    })
+
+    it("accepts only providers implemented by the configuration API", () => {
+      expect(["kimi", "deepseek", "qwen", "minimax"].every(isSupportedProvider)).toBe(true)
+      expect(isSupportedProvider("unsupported-provider")).toBe(false)
+      expect(isSupportedProvider(null)).toBe(false)
+    })
   })
 
   it("includes project/character context but no skills/memory sections when none are configured", async () => {

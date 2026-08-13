@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import { db } from "../db"
 import { aiProvider } from "../db/schema"
+import { isSupportedProvider } from "../lib/ai-provider-types"
 import { decryptApiKey, encryptApiKey, hashApiKey } from "../lib/encryption"
 import { requireAuth } from "../middleware/auth"
 
@@ -30,6 +31,17 @@ interface Variables {
 }
 
 const aiProvidersRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
+
+function parseStoredJson(value: string | null): unknown {
+  if (!value) {
+    return null
+  }
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return null
+  }
+}
 
 // Apply the shared auth + active-organization middleware to all routes
 // (see middleware/auth.ts — this used to be a duplicated, buggy local copy).
@@ -67,6 +79,8 @@ aiProvidersRouter.get("/", async (c: Context<{ Bindings: Env; Variables: Variabl
       currentUsage: aiProvider.currentUsage,
       createdAt: aiProvider.createdAt,
       lastUsedAt: aiProvider.lastUsedAt,
+      supportedModels: aiProvider.supportedModels,
+      providerConfig: aiProvider.providerConfig,
     })
     .from(aiProvider)
     .where(eq(aiProvider.userId, user.id))
@@ -77,6 +91,8 @@ aiProvidersRouter.get("/", async (c: Context<{ Bindings: Env; Variables: Variabl
       ...p,
       createdAt: p.createdAt.toISOString(),
       lastUsedAt: p.lastUsedAt?.toISOString() || null,
+      supportedModels: parseStoredJson(p.supportedModels),
+      providerConfig: parseStoredJson(p.providerConfig),
     })),
   })
 })
@@ -101,8 +117,8 @@ aiProvidersRouter.post("/", async (c: Context<{ Bindings: Env; Variables: Variab
       providerConfig,
     } = body
 
-    if (!provider) {
-      return c.json({ error: "Provider is required" }, 400)
+    if (!isSupportedProvider(provider)) {
+      return c.json({ error: "A supported provider is required" }, 400)
     }
 
     // API key is optional for Ollama (local installation)
@@ -281,8 +297,8 @@ aiProvidersRouter.get("/:id", async (c: Context<{ Bindings: Env; Variables: Vari
       createdAt: provider.createdAt.toISOString(),
       updatedAt: provider.updatedAt.toISOString(),
       lastUsedAt: provider.lastUsedAt?.toISOString() || null,
-      supportedModels: provider.supportedModels ? JSON.parse(provider.supportedModels) : null,
-      providerConfig: provider.providerConfig ? JSON.parse(provider.providerConfig) : null,
+      supportedModels: parseStoredJson(provider.supportedModels),
+      providerConfig: parseStoredJson(provider.providerConfig),
     },
   })
 })

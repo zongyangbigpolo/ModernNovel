@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { api, type Location } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface DeleteLocationDialogProps {
   location: Location
@@ -25,17 +26,18 @@ export function DeleteLocationDialog({
   location,
   projectId,
 }: DeleteLocationDialogProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
 
   const deleteLocationMutation = useMutation({
     mutationFn: () => api.locations.delete(projectId, location.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations", projectId] })
-      toast.success(`Location "${location.name}" deleted successfully!`)
+      toast.success(t("codex.location.delete.success", { name: location.name }))
       onOpenChange(false)
     },
     onError: (error) => {
-      toast.error(`Failed to delete location: ${error.message}`)
+      toast.error(t("codex.location.delete.failed", { message: error.message }))
     },
   })
 
@@ -47,20 +49,23 @@ export function DeleteLocationDialog({
     <AlertDialog onOpenChange={onOpenChange} open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Location</AlertDialogTitle>
+          <AlertDialogTitle>{t("codex.location.delete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{location.name}"? This action cannot be undone and will
-            permanently remove this location from your project's codex.
+            {t("codex.location.delete.description", { name: location.name })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteLocationMutation.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={deleteLocationMutation.isPending}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={deleteLocationMutation.isPending}
             onClick={handleDelete}
           >
-            {deleteLocationMutation.isPending ? "Deleting..." : "Delete Location"}
+            {deleteLocationMutation.isPending
+              ? t("codex.location.delete.deleting")
+              : t("codex.location.delete.action")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

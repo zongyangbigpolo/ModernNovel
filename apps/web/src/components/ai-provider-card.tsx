@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useI18n } from "@/lib/i18n"
 
 interface AiProviderCardProps {
   children?: React.ReactNode // For the AddProviderForm
@@ -33,21 +34,22 @@ export function AiProviderCard({
   onDelete,
   children,
 }: AiProviderCardProps) {
+  const { t } = useI18n()
   const connectedAction = onDelete ? (
     <ConfirmDialog
-      confirmText="Delete"
-      description="Are you sure you want to delete this AI provider? This action cannot be undone."
+      confirmText={t("common.delete")}
+      description={t("ai.providerCard.deleteDialogDescription")}
       onConfirm={onDelete}
-      title="Delete AI Provider"
+      title={t("ai.providerCard.deleteDialogTitle")}
       variant="destructive"
     >
       <Button size="sm" variant="destructive">
-        Delete
+        {t("common.delete")}
       </Button>
     </ConfirmDialog>
   ) : (
     <Button disabled size="sm" variant="destructive">
-      Delete
+      {t("common.delete")}
     </Button>
   )
 
@@ -62,17 +64,17 @@ export function AiProviderCard({
             <div className="flex flex-wrap gap-1.5">
               {recommended && (
                 <Badge className="text-xs" variant="secondary">
-                  Recommended
+                  {t("ai.providerCard.recommendedBadge")}
                 </Badge>
               )}
               {isConnected && (
                 <Badge className="text-xs" variant="default">
-                  Connected
+                  {t("ai.providerCard.connectedBadge")}
                 </Badge>
               )}
               {!enabled && (
                 <Badge className="text-xs" variant="outline">
-                  Coming Soon
+                  {t("ai.providerCard.comingSoonBadge")}
                 </Badge>
               )}
             </div>
@@ -85,13 +87,19 @@ export function AiProviderCard({
                 <DialogTrigger asChild>
                   <Button className="w-full sm:w-auto" disabled={!enabled} onClick={onConnect}>
                     <Plus className="mr-2 h-4 w-4" />
-                    {enabled ? "Connect" : "Coming Soon"}
+                    {enabled
+                      ? t("ai.providerCard.connectButton")
+                      : t("ai.providerCard.comingSoonBadge")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Connect {name}</DialogTitle>
-                    <DialogDescription>Connect to {name} to access their models</DialogDescription>
+                    <DialogTitle>
+                      {t("ai.providerCard.connectDialogTitle", { provider: name })}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("ai.providerCard.connectDialogDescription", { provider: name })}
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="max-h-[calc(90vh-8rem)] overflow-y-auto pr-2">{children}</div>
                 </DialogContent>

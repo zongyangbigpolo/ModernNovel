@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/context-menu"
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 import { api, type Location } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface LocationSidebarSectionProps {
   isExpanded: boolean
@@ -29,6 +30,7 @@ export function LocationSidebarSection({
   onToggle,
   onOpenCodexModal,
 }: LocationSidebarSectionProps) {
+  const { t } = useI18n()
   const [locationDialogOpen, setLocationDialogOpen] = useState(false)
   const [locationDialogMode, setLocationDialogMode] = useState<"create" | "edit">("create")
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
@@ -72,7 +74,7 @@ export function LocationSidebarSection({
                 <ChevronRight className="h-4 w-4" />
               )}
               <MapPin className="h-4 w-4" />
-              <span>Locations</span>
+              <span>{t("codex.types.locations.label")}</span>
               <Badge className="ml-auto" variant="secondary">
                 {locations.length}
               </Badge>
@@ -87,7 +89,7 @@ export function LocationSidebarSection({
                 variant="ghost"
               >
                 <Plus className="h-4 w-4" />
-                <span>New</span>
+                <span>{t("common.new")}</span>
               </Button>
               {locations.map((location) => (
                 <ContextMenu key={location.id}>
@@ -105,11 +107,11 @@ export function LocationSidebarSection({
                   <ContextMenuContent>
                     <ContextMenuItem onClick={() => onOpenCodexModal("locations", location.name)}>
                       <FileText className="mr-2 h-4 w-4" />
-                      View Details
+                      {t("codex.sidebar.viewDetails")}
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => handleEditLocation(location)}>
                       <Edit className="mr-2 h-4 w-4" />
-                      Edit Location
+                      {t("codex.location.actions.edit")}
                     </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem
@@ -117,7 +119,7 @@ export function LocationSidebarSection({
                       onClick={() => handleDeleteLocation(location)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Location
+                      {t("codex.location.delete.action")}
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>

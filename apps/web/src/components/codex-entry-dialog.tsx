@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useI18n } from "@/lib/i18n"
 
 export interface CodexEntryValues {
   description: string
@@ -46,6 +47,7 @@ export function CodexEntryDialog({
   isSaving,
   onSubmit,
 }: CodexEntryDialogProps) {
+  const { t } = useI18n()
   const [name, setName] = useState(initialName)
   const [description, setDescription] = useState(initialDescription)
 
@@ -58,6 +60,7 @@ export function CodexEntryDialog({
   }, [open, initialName, initialDescription])
 
   const trimmedName = name.trim()
+  const nounLabelLower = nounLabel.toLowerCase()
   const canSave = trimmedName.length > 0 && !isSaving
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -72,11 +75,15 @@ export function CodexEntryDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? `Add ${nounLabel}` : `Edit ${nounLabel}`}</DialogTitle>
+          <DialogTitle>
+            {mode === "create"
+              ? t("codex.entryDialog.title.create", { noun: nounLabel })
+              : t("codex.entryDialog.title.edit", { noun: nounLabel })}
+          </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? `Add a new ${nounLabel.toLowerCase()} to your story's codex.`
-              : `Update this ${nounLabel.toLowerCase()}.`}
+              ? t("codex.entryDialog.description.create", { noun: nounLabelLower })
+              : t("codex.entryDialog.description.edit", { noun: nounLabelLower })}
           </DialogDescription>
         </DialogHeader>
 
@@ -87,18 +94,20 @@ export function CodexEntryDialog({
               autoFocus
               id="codex-entry-name"
               onChange={(event) => setName(event.target.value)}
-              placeholder={`${nameLabel}`}
+              placeholder={nameLabel}
               value={name}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="codex-entry-description">Description</Label>
+            <Label htmlFor="codex-entry-description">{t("common.description")}</Label>
             <Textarea
               className="min-h-[120px]"
               id="codex-entry-description"
               onChange={(event) => setDescription(event.target.value)}
-              placeholder={`Describe this ${nounLabel.toLowerCase()}…`}
+              placeholder={t("codex.entryDialog.placeholder.description", {
+                noun: nounLabelLower,
+              })}
               value={description}
             />
           </div>
@@ -110,14 +119,16 @@ export function CodexEntryDialog({
               type="button"
               variant="outline"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button disabled={!canSave} type="submit">
               {(() => {
                 if (isSaving) {
-                  return "Saving…"
+                  return t("codex.entryDialog.saving")
                 }
-                return mode === "create" ? `Add ${nounLabel}` : "Save changes"
+                return mode === "create"
+                  ? t("codex.entryDialog.submit.create", { noun: nounLabel })
+                  : t("codex.entryDialog.submit.edit")
               })()}
             </Button>
           </DialogFooter>

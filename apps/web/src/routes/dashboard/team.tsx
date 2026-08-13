@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 
 type WorkspaceRole = "owner" | "admin" | "member"
 
@@ -35,6 +36,18 @@ function TeamPage() {
   const { data: session } = authClient.useSession()
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>("member")
+  const { t } = useI18n()
+
+  const translateRole = (role: WorkspaceRole) => {
+    switch (role) {
+      case "owner":
+        return t("dashboard.roles.owner")
+      case "admin":
+        return t("dashboard.roles.admin")
+      default:
+        return t("dashboard.roles.member")
+    }
+  }
 
   const organizationsQuery = useQuery({
     queryKey: ["organizations"],
@@ -105,7 +118,7 @@ function TeamPage() {
   const inviteMutation = useMutation({
     mutationFn: async () => {
       if (!activeOrganizationId) {
-        throw new Error("Select a workspace first")
+        throw new Error(t("dashboard.team.feedback.selectWorkspaceFirst"))
       }
       const result = await authClient.organization.inviteMember({
         email: inviteEmail.trim(),
@@ -119,7 +132,7 @@ function TeamPage() {
     onSuccess: async () => {
       setInviteEmail("")
       await refreshOrganization()
-      toast.success("Invitation created")
+      toast.success(t("dashboard.team.feedback.invitationCreated"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -133,7 +146,7 @@ function TeamPage() {
     },
     onSuccess: async () => {
       await refreshOrganization()
-      toast.success("Workspace joined")
+      toast.success(t("dashboard.team.feedback.workspaceJoined"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -141,7 +154,7 @@ function TeamPage() {
   const roleMutation = useMutation({
     mutationFn: async ({ memberId, role }: { memberId: string; role: WorkspaceRole }) => {
       if (!activeOrganizationId) {
-        throw new Error("Select a workspace first")
+        throw new Error(t("dashboard.team.feedback.selectWorkspaceFirst"))
       }
       const result = await authClient.organization.updateMemberRole({
         memberId,
@@ -159,7 +172,7 @@ function TeamPage() {
   const removeMutation = useMutation({
     mutationFn: async (memberId: string) => {
       if (!activeOrganizationId) {
-        throw new Error("Select a workspace first")
+        throw new Error(t("dashboard.team.feedback.selectWorkspaceFirst"))
       }
       const result = await authClient.organization.removeMember({
         memberIdOrEmail: memberId,
@@ -171,7 +184,7 @@ function TeamPage() {
     },
     onSuccess: async () => {
       await refreshOrganization()
-      toast.success("Member removed")
+      toast.success(t("dashboard.team.feedback.memberRemoved"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -179,27 +192,31 @@ function TeamPage() {
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div>
-        <h1 className="font-semibold text-3xl">Workspace members</h1>
-        <p className="text-muted-foreground">Invite people and control what they can manage.</p>
+        <h1 className="font-semibold text-3xl">{t("dashboard.team.title")}</h1>
+        <p className="text-muted-foreground">{t("dashboard.team.description")}</p>
       </div>
 
       {(receivedInvitationsQuery.data?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Your invitations</CardTitle>
+            <CardTitle>{t("dashboard.team.invitations.title")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {receivedInvitationsQuery.data?.map((invitation) => (
               <div className="flex items-center justify-between gap-4" key={invitation.id}>
                 <div>
                   <div className="font-medium">{invitation.organizationName}</div>
-                  <div className="text-muted-foreground text-sm">Role: {invitation.role}</div>
+                  <div className="text-muted-foreground text-sm">
+                    {t("dashboard.team.invitations.role", {
+                      role: translateRole(invitation.role as WorkspaceRole),
+                    })}
+                  </div>
                 </div>
                 <Button
                   disabled={acceptMutation.isPending}
                   onClick={() => acceptMutation.mutate(invitation.id)}
                 >
-                  Accept
+                  {t("dashboard.team.invitations.accept")}
                 </Button>
               </div>
             ))}
@@ -210,11 +227,8 @@ function TeamPage() {
       {canManage && (
         <Card>
           <CardHeader>
-            <CardTitle>Invite a member</CardTitle>
-            <CardDescription>
-              The invitation is available in the recipient's account even if email delivery is not
-              configured.
-            </CardDescription>
+            <CardTitle>{t("dashboard.team.invite.title")}</CardTitle>
+            <CardDescription>{t("dashboard.team.invite.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -225,7 +239,7 @@ function TeamPage() {
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="invite-email">Email</Label>
+                <Label htmlFor="invite-email">{t("auth.fields.email")}</Label>
                 <Input
                   id="invite-email"
                   onChange={(event) => setInviteEmail(event.target.value)}
@@ -235,7 +249,7 @@ function TeamPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>{t("dashboard.team.invite.roleLabel")}</Label>
                 <Select
                   onValueChange={(value) => {
                     if (isWorkspaceRole(value)) {
@@ -248,14 +262,14 @@ function TeamPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="member">{t("dashboard.team.roles.member")}</SelectItem>
+                    <SelectItem value="admin">{t("dashboard.team.roles.admin")}</SelectItem>
+                    <SelectItem value="owner">{t("dashboard.team.roles.owner")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button className="self-end" disabled={inviteMutation.isPending} type="submit">
-                Invite
+                {t("dashboard.team.invite.submit")}
               </Button>
             </form>
           </CardContent>
@@ -264,10 +278,8 @@ function TeamPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Members</CardTitle>
-          <CardDescription>
-            Owners have full control, admins manage members, and members collaborate on content.
-          </CardDescription>
+          <CardTitle>{t("dashboard.team.members.title")}</CardTitle>
+          <CardDescription>{t("dashboard.team.members.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {membersQuery.isError && (
@@ -276,9 +288,13 @@ function TeamPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                {canManage && <TableHead className="text-right">Action</TableHead>}
+                <TableHead>{t("dashboard.team.members.table.member")}</TableHead>
+                <TableHead>{t("dashboard.team.members.table.role")}</TableHead>
+                {canManage && (
+                  <TableHead className="text-right">
+                    {t("dashboard.team.members.table.action")}
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -303,13 +319,13 @@ function TeamPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="member">{t("dashboard.team.roles.member")}</SelectItem>
+                          <SelectItem value="admin">{t("dashboard.team.roles.admin")}</SelectItem>
+                          <SelectItem value="owner">{t("dashboard.team.roles.owner")}</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge variant="secondary">{member.role}</Badge>
+                      <Badge variant="secondary">{translateRole(member.role)}</Badge>
                     )}
                   </TableCell>
                   {canManage && (
@@ -324,7 +340,7 @@ function TeamPage() {
                         size="sm"
                         variant="outline"
                       >
-                        Remove
+                        {t("common.remove")}
                       </Button>
                     </TableCell>
                   )}
@@ -338,13 +354,13 @@ function TeamPage() {
       {canManage && (sentInvitationsQuery.data?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Pending invitations</CardTitle>
+            <CardTitle>{t("dashboard.team.pending.title")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {sentInvitationsQuery.data?.map((invitation) => (
               <div className="flex items-center justify-between" key={invitation.id}>
                 <span>{invitation.email}</span>
-                <Badge variant="outline">{invitation.role}</Badge>
+                <Badge variant="outline">{translateRole(invitation.role as WorkspaceRole)}</Badge>
               </div>
             ))}
           </CardContent>

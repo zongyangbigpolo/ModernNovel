@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { api, type Character, type Location, type LoreEntry, type PlotThread } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 // Define field types for dynamic form generation
 type FieldType = "text" | "textarea" | "select" | "number"
@@ -37,26 +38,30 @@ interface CodexFormField {
   validation?: z.ZodSchema<unknown>
 }
 
-// Character form configuration based on database schema
-const characterFormConfig: CodexFormField[] = [
+type Translate = ReturnType<typeof useI18n>["t"]
+
+const createCharacterFormConfig = (t: Translate): CodexFormField[] => [
   {
     name: "name",
-    label: "Name",
+    label: t("common.name"),
     type: "text",
     required: true,
-    placeholder: "Character name",
-    validation: z.string().min(1, "Name is required").max(100, "Name is too long"),
+    placeholder: t("codex.form.placeholders.characterName"),
+    validation: z
+      .string()
+      .min(1, t("codex.form.validation.nameRequired"))
+      .max(100, t("codex.form.validation.nameTooLong")),
   },
   {
     name: "role",
-    label: "Role",
+    label: t("codex.form.fields.role"),
     type: "select",
-    placeholder: "Select a role",
+    placeholder: t("codex.form.placeholders.selectRole"),
     options: [
-      { value: "protagonist", label: "Protagonist" },
-      { value: "antagonist", label: "Antagonist" },
-      { value: "supporting", label: "Supporting" },
-      { value: "minor", label: "Minor" },
+      { value: "protagonist", label: t("codex.form.options.roles.protagonist") },
+      { value: "antagonist", label: t("codex.form.options.roles.antagonist") },
+      { value: "supporting", label: t("codex.form.options.roles.supporting") },
+      { value: "minor", label: t("codex.form.options.roles.minor") },
     ],
     validation: z
       .union([z.enum(["protagonist", "antagonist", "supporting", "minor"]), z.literal("")])
@@ -64,164 +69,181 @@ const characterFormConfig: CodexFormField[] = [
   },
   {
     name: "description",
-    label: "Description",
+    label: t("common.description"),
     type: "textarea",
-    placeholder: "Brief description of the character",
+    placeholder: t("codex.form.placeholders.characterDescription"),
     validation: z.string().optional(),
   },
   {
     name: "appearance",
-    label: "Appearance",
+    label: t("codex.form.fields.appearance"),
     type: "textarea",
-    placeholder: "Physical description, clothing, distinguishing features",
+    placeholder: t("codex.form.placeholders.appearance"),
     validation: z.string().optional(),
   },
   {
     name: "personality",
-    label: "Personality",
+    label: t("codex.form.fields.personality"),
     type: "textarea",
-    placeholder: "Personality traits, quirks, mannerisms",
+    placeholder: t("codex.form.placeholders.personality"),
     validation: z.string().optional(),
   },
   {
     name: "backstory",
-    label: "Backstory",
+    label: t("codex.form.fields.backstory"),
     type: "textarea",
-    placeholder: "Character's history, upbringing, past events",
+    placeholder: t("codex.form.placeholders.backstory"),
     validation: z.string().optional(),
   },
   {
     name: "motivation",
-    label: "Motivation",
+    label: t("codex.form.fields.motivation"),
     type: "textarea",
-    placeholder: "What drives this character? Goals, fears, desires",
+    placeholder: t("codex.form.placeholders.motivation"),
     validation: z.string().optional(),
   },
 ]
 
-// Location form configuration based on database schema
-const locationFormConfig: CodexFormField[] = [
+const createLocationFormConfig = (t: Translate): CodexFormField[] => [
   {
     name: "name",
-    label: "Name",
+    label: t("common.name"),
     type: "text",
     required: true,
-    placeholder: "Location name",
-    validation: z.string().min(1, "Name is required").max(100, "Name is too long"),
+    placeholder: t("codex.form.placeholders.locationName"),
+    validation: z
+      .string()
+      .min(1, t("codex.form.validation.nameRequired"))
+      .max(100, t("codex.form.validation.nameTooLong")),
   },
   {
     name: "type",
-    label: "Type",
+    label: t("common.type"),
     type: "select",
-    placeholder: "Select a type",
+    placeholder: t("codex.form.placeholders.selectType"),
     options: [
-      { value: "city", label: "City" },
-      { value: "country", label: "Country" },
-      { value: "building", label: "Building" },
-      { value: "room", label: "Room" },
-      { value: "fantasy_realm", label: "Fantasy Realm" },
-      { value: "planet", label: "Planet" },
-      { value: "dimension", label: "Dimension" },
+      { value: "city", label: t("codex.form.options.locationTypes.city") },
+      { value: "country", label: t("codex.form.options.locationTypes.country") },
+      { value: "building", label: t("codex.form.options.locationTypes.building") },
+      { value: "room", label: t("codex.form.options.locationTypes.room") },
+      {
+        value: "fantasy_realm",
+        label: t("codex.form.options.locationTypes.fantasyRealm"),
+      },
+      { value: "planet", label: t("codex.form.options.locationTypes.planet") },
+      { value: "dimension", label: t("codex.form.options.locationTypes.dimension") },
     ],
     validation: z
-      .enum(["city", "country", "building", "room", "fantasy_realm", "planet", "dimension"])
+      .union([
+        z.enum(["city", "country", "building", "room", "fantasy_realm", "planet", "dimension"]),
+        z.literal(""),
+      ])
       .optional(),
   },
   {
     name: "description",
-    label: "Description",
+    label: t("common.description"),
     type: "textarea",
-    placeholder: "Describe this location in detail",
+    placeholder: t("codex.form.placeholders.locationDescription"),
     validation: z.string().optional(),
   },
 ]
 
-// Lore form configuration - using generic fields for now
-const loreFormConfig: CodexFormField[] = [
+const createLoreFormConfig = (t: Translate): CodexFormField[] => [
   {
     name: "name",
-    label: "Title",
+    label: t("codex.form.fields.title"),
     type: "text",
     required: true,
-    placeholder: "Lore entry title",
-    validation: z.string().min(1, "Title is required").max(100, "Title is too long"),
+    placeholder: t("codex.form.placeholders.loreTitle"),
+    validation: z
+      .string()
+      .min(1, t("codex.form.validation.titleRequired"))
+      .max(100, t("codex.form.validation.titleTooLong")),
   },
   {
     name: "type",
-    label: "Type",
+    label: t("common.type"),
     type: "select",
-    placeholder: "Select a type",
+    placeholder: t("codex.form.placeholders.selectType"),
     options: [
-      { value: "core_rule", label: "Core Rule" },
-      { value: "history", label: "History" },
-      { value: "culture", label: "Culture" },
-      { value: "magic_system", label: "Magic System" },
-      { value: "technology", label: "Technology" },
-      { value: "religion", label: "Religion" },
-      { value: "politics", label: "Politics" },
-      { value: "custom", label: "Custom" },
+      { value: "core_rule", label: t("codex.form.options.loreTypes.coreRule") },
+      { value: "history", label: t("codex.form.options.loreTypes.history") },
+      { value: "culture", label: t("codex.form.options.loreTypes.culture") },
+      { value: "magic_system", label: t("codex.form.options.loreTypes.magicSystem") },
+      { value: "technology", label: t("codex.form.options.loreTypes.technology") },
+      { value: "religion", label: t("codex.form.options.loreTypes.religion") },
+      { value: "politics", label: t("codex.form.options.loreTypes.politics") },
+      { value: "custom", label: t("codex.form.options.common.custom") },
     ],
     validation: z.string().optional(),
   },
   {
     name: "description",
-    label: "Description",
+    label: t("common.description"),
     type: "textarea",
-    placeholder: "Describe this lore entry in detail",
+    placeholder: t("codex.form.placeholders.loreDescription"),
     validation: z.string().optional(),
   },
 ]
 
-// Plot form configuration - for story structure and narrative threads
-const plotFormConfig: CodexFormField[] = [
+const createPlotFormConfig = (t: Translate): CodexFormField[] => [
   {
     name: "title",
-    label: "Title",
+    label: t("codex.form.fields.title"),
     type: "text",
     required: true,
-    placeholder: "Plot thread title",
-    validation: z.string().min(1, "Title is required").max(100, "Title is too long"),
+    placeholder: t("codex.form.placeholders.plotTitle"),
+    validation: z
+      .string()
+      .min(1, t("codex.form.validation.titleRequired"))
+      .max(100, t("codex.form.validation.titleTooLong")),
   },
   {
     name: "type",
-    label: "Type",
+    label: t("common.type"),
     type: "select",
-    placeholder: "Select a type",
+    placeholder: t("codex.form.placeholders.selectType"),
     options: [
-      { value: "inciting_incident", label: "Inciting Incident" },
-      { value: "plot_point_1", label: "Plot Point 1" },
-      { value: "midpoint", label: "Midpoint" },
-      { value: "plot_point_2", label: "Plot Point 2" },
-      { value: "climax", label: "Climax" },
-      { value: "resolution", label: "Resolution" },
-      { value: "custom", label: "Custom" },
+      {
+        value: "inciting_incident",
+        label: t("codex.form.options.plotTypes.incitingIncident"),
+      },
+      { value: "plot_point_1", label: t("codex.form.options.plotTypes.plotPoint1") },
+      { value: "midpoint", label: t("codex.form.options.plotTypes.midpoint") },
+      { value: "plot_point_2", label: t("codex.form.options.plotTypes.plotPoint2") },
+      { value: "climax", label: t("codex.form.options.plotTypes.climax") },
+      { value: "resolution", label: t("codex.form.options.plotTypes.resolution") },
+      { value: "custom", label: t("codex.form.options.common.custom") },
     ],
     validation: z.string().optional(),
   },
   {
     name: "order",
-    label: "Order",
+    label: t("codex.form.fields.order"),
     type: "number",
-    placeholder: "Order in story (1, 2, 3...)",
-    validation: z.number().int().positive("Order must be a positive number"),
+    placeholder: t("codex.form.placeholders.plotOrder"),
+    validation: z.number().int().positive(t("codex.form.validation.orderPositive")),
   },
   {
     name: "status",
-    label: "Status",
+    label: t("common.status"),
     type: "select",
-    placeholder: "Select status",
+    placeholder: t("codex.form.placeholders.selectStatus"),
     options: [
-      { value: "planned", label: "Planned" },
-      { value: "in_progress", label: "In Progress" },
-      { value: "completed", label: "Completed" },
+      { value: "planned", label: t("codex.form.options.plotStatuses.planned") },
+      { value: "in_progress", label: t("codex.form.options.plotStatuses.inProgress") },
+      { value: "completed", label: t("codex.form.options.plotStatuses.completed") },
     ],
-    validation: z.string().optional(),
+    validation: z
+      .union([z.enum(["planned", "in_progress", "completed"]), z.literal("")])
+      .optional(),
   },
   {
     name: "description",
-    label: "Description",
+    label: t("common.description"),
     type: "textarea",
-    placeholder: "Describe this plot thread in detail",
+    placeholder: t("codex.form.placeholders.plotDescription"),
     validation: z.string().optional(),
   },
 ]
@@ -241,19 +263,33 @@ const createDynamicSchema = (fields: CodexFormField[]) => {
   return z.object(schemaFields)
 }
 
-// Get form configuration based on entry type
-const getFormConfig = (entryType: "characters" | "locations" | "lore" | "plot") => {
+const getFormConfig = (entryType: "characters" | "locations" | "lore" | "plot", t: Translate) => {
   switch (entryType) {
     case "characters":
-      return characterFormConfig
+      return createCharacterFormConfig(t)
     case "locations":
-      return locationFormConfig
+      return createLocationFormConfig(t)
     case "lore":
-      return loreFormConfig
+      return createLoreFormConfig(t)
     case "plot":
-      return plotFormConfig
+      return createPlotFormConfig(t)
     default:
-      throw new Error(`Form configuration not implemented for ${entryType}`)
+      throw new Error(t("codex.form.errors.formNotImplemented", { type: entryType }))
+  }
+}
+
+const getEntryLabel = (entryType: "characters" | "locations" | "lore" | "plot", t: Translate) => {
+  switch (entryType) {
+    case "characters":
+      return t("codex.types.characters.singular").toLowerCase()
+    case "locations":
+      return t("codex.types.locations.singular").toLowerCase()
+    case "lore":
+      return t("codex.types.lore.singular").toLowerCase()
+    case "plot":
+      return t("codex.types.plot.singular").toLowerCase()
+    default:
+      return t("codex.types.unknown.singular").toLowerCase()
   }
 }
 
@@ -286,11 +322,13 @@ export function DynamicCodexForm({
   onSave,
   onCancel,
 }: DynamicCodexFormProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
 
-  const formConfig = useMemo(() => getFormConfig(entryType), [entryType])
+  const formConfig = useMemo(() => getFormConfig(entryType, t), [entryType, t])
   const schema = useMemo(() => createDynamicSchema(formConfig), [formConfig])
   const defaultValues = useMemo(() => createDefaultValues(entry, formConfig), [entry, formConfig])
+  const entryLabel = useMemo(() => getEntryLabel(entryType, t), [entryType, t])
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -311,15 +349,17 @@ export function DynamicCodexForm({
       if (entryType === "plot") {
         return api.plot.update(projectId, entry.id, data)
       }
-      throw new Error(`Update not implemented for ${entryType}`)
+      throw new Error(t("codex.form.errors.updateNotImplemented", { type: entryType }))
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [entryType, projectId] })
-      toast.success(`${entryType.slice(0, -1)} updated successfully!`)
+      toast.success(t("codex.form.feedback.updated", { noun: entryLabel }))
       onSave()
     },
     onError: (error) => {
-      toast.error(`Failed to update ${entryType.slice(0, -1)}: ${error.message}`)
+      toast.error(
+        t("codex.form.feedback.updateFailed", { noun: entryLabel, message: error.message })
+      )
     },
   })
 
@@ -391,7 +431,6 @@ export function DynamicCodexForm({
                 </FormLabel>
                 <Select
                   onValueChange={(value) => {
-                    // Allow clearing the value by passing empty string
                     formField.onChange(value === "clear" ? "" : value)
                   }}
                   value={(formField.value as string) || ""}
@@ -402,10 +441,11 @@ export function DynamicCodexForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {/* Add clear option if field is not required */}
                     {!field.required && (
                       <SelectItem value="clear">
-                        <span className="text-muted-foreground italic">Clear selection</span>
+                        <span className="text-muted-foreground italic">
+                          {t("codex.form.clearSelection")}
+                        </span>
                       </SelectItem>
                     )}
                     {field.options?.map((option) => (
@@ -439,10 +479,9 @@ export function DynamicCodexForm({
                     {...formField}
                     onChange={(e) => {
                       const value = e.target.value
-                      // Allow clearing the input, otherwise parse as a number.
                       formField.onChange(value === "" ? null : Number.parseInt(value, 10))
                     }}
-                    value={formField.value as string}
+                    value={(formField.value as number | null) ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -468,10 +507,10 @@ export function DynamicCodexForm({
             type="button"
             variant="outline"
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button disabled={updateMutation.isPending} type="submit">
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            {updateMutation.isPending ? t("common.saving") : t("codex.form.saveChanges")}
           </Button>
         </div>
       </form>

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/projects/$projectId/codex/$type")({
   component: CodexTypeInterface,
@@ -36,7 +37,9 @@ interface CodexConfig {
   icon: typeof Users
   nameLabel: string
   nounLabel: string
+  nounLabelLower: string
   title: string
+  titleLower: string
 }
 
 interface CodexBinding {
@@ -46,43 +49,67 @@ interface CodexBinding {
   update: (id: string, values: CodexEntryValues) => Promise<unknown>
 }
 
-const CODEX_CONFIG: Record<string, CodexConfig> = {
+interface CodexConfigSpec {
+  descriptionKey: string
+  icon: typeof Users
+  nameLabelKey: string
+  nounKey: string
+  titleKey: string
+}
+
+const CODEX_CONFIG: Record<string, CodexConfigSpec> = {
   characters: {
-    title: "Characters",
-    description: "Manage your story's characters",
+    titleKey: "codex.types.characters.title",
+    descriptionKey: "codex.types.characters.description",
     icon: Users,
-    nounLabel: "Character",
-    nameLabel: "Name",
+    nounKey: "codex.types.characters.singular",
+    nameLabelKey: "common.name",
   },
   locations: {
-    title: "Locations",
-    description: "Track your story's places and settings",
+    titleKey: "codex.types.locations.title",
+    descriptionKey: "codex.types.locations.description",
     icon: MapPin,
-    nounLabel: "Location",
-    nameLabel: "Name",
+    nounKey: "codex.types.locations.singular",
+    nameLabelKey: "common.name",
   },
   lore: {
-    title: "Lore & World-building",
-    description: "Document your world's history and rules",
+    titleKey: "codex.types.lore.title",
+    descriptionKey: "codex.types.lore.description",
     icon: Scroll,
-    nounLabel: "Lore Entry",
-    nameLabel: "Name",
+    nounKey: "codex.types.lore.singular",
+    nameLabelKey: "codex.form.fields.title",
   },
   plot: {
-    title: "Plot Threads",
-    description: "Track your story's narrative threads and arcs",
+    titleKey: "codex.types.plot.title",
+    descriptionKey: "codex.types.plot.description",
     icon: FileText,
-    nounLabel: "Plot Thread",
-    nameLabel: "Title",
+    nounKey: "codex.types.plot.singular",
+    nameLabelKey: "codex.form.fields.title",
   },
 }
 
-const FALLBACK_CONFIG: CodexConfig = {
-  title: "Codex",
-  description: "Manage your story elements",
+const FALLBACK_CONFIG: CodexConfigSpec = {
+  titleKey: "codex.types.unknown.title",
+  descriptionKey: "codex.types.unknown.description",
   icon: FileText,
-  nounLabel: "Entry",
-  nameLabel: "Name",
+  nounKey: "codex.types.unknown.singular",
+  nameLabelKey: "common.name",
+}
+
+function getCodexConfig(t: ReturnType<typeof useI18n>["t"], type: string): CodexConfig {
+  const spec = CODEX_CONFIG[type] ?? FALLBACK_CONFIG
+  const title = t(spec.titleKey)
+  const nounLabel = t(spec.nounKey)
+
+  return {
+    title,
+    titleLower: title.toLowerCase(),
+    description: t(spec.descriptionKey),
+    icon: spec.icon,
+    nounLabel,
+    nounLabelLower: nounLabel.toLowerCase(),
+    nameLabel: t(spec.nameLabelKey),
+  }
 }
 
 // Maps the generic codex form onto the right API client for the active type.
@@ -151,10 +178,11 @@ function getBinding(type: string, projectId: string): CodexBinding | null {
 }
 
 function CodexTypeInterface() {
+  const { t } = useI18n()
   const { type, projectId } = Route.useParams()
   const queryClient = useQueryClient()
 
-  const config = CODEX_CONFIG[type] ?? FALLBACK_CONFIG
+  const config = getCodexConfig(t, type)
   const IconComponent = config.icon
   const binding = getBinding(type, projectId)
 
@@ -175,49 +203,64 @@ function CodexTypeInterface() {
   const createMutation = useMutation({
     mutationFn: (values: CodexEntryValues) => {
       if (!binding) {
-        throw new Error("Unknown codex type")
+        throw new Error(t("codex.typePage.errors.unknownType"))
       }
       return binding.create(values, entries.length)
     },
     onSuccess: () => {
       invalidate()
-      toast.success(`${config.nounLabel} added`)
+      toast.success(t("codex.typePage.feedback.added", { noun: config.nounLabel }))
       setDialogOpen(false)
     },
     onError: (error) =>
-      toast.error(`Failed to add ${config.nounLabel.toLowerCase()}: ${error.message}`),
+      toast.error(
+        t("codex.typePage.feedback.addFailed", {
+          noun: config.nounLabelLower,
+          message: error.message,
+        })
+      ),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, values }: { id: string; values: CodexEntryValues }) => {
       if (!binding) {
-        throw new Error("Unknown codex type")
+        throw new Error(t("codex.typePage.errors.unknownType"))
       }
       return binding.update(id, values)
     },
     onSuccess: () => {
       invalidate()
-      toast.success(`${config.nounLabel} updated`)
+      toast.success(t("codex.typePage.feedback.updated", { noun: config.nounLabel }))
       setEditingEntry(null)
     },
     onError: (error) =>
-      toast.error(`Failed to update ${config.nounLabel.toLowerCase()}: ${error.message}`),
+      toast.error(
+        t("codex.typePage.feedback.updateFailed", {
+          noun: config.nounLabelLower,
+          message: error.message,
+        })
+      ),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => {
       if (!binding) {
-        throw new Error("Unknown codex type")
+        throw new Error(t("codex.typePage.errors.unknownType"))
       }
       return binding.remove(id)
     },
     onSuccess: () => {
       invalidate()
-      toast.success(`${config.nounLabel} deleted`)
+      toast.success(t("codex.typePage.feedback.deleted", { noun: config.nounLabel }))
       setDeletingEntry(null)
     },
     onError: (error) =>
-      toast.error(`Failed to delete ${config.nounLabel.toLowerCase()}: ${error.message}`),
+      toast.error(
+        t("codex.typePage.feedback.deleteFailed", {
+          noun: config.nounLabelLower,
+          message: error.message,
+        })
+      ),
   })
 
   const handleSubmit = (values: CodexEntryValues) => {
@@ -248,7 +291,7 @@ function CodexTypeInterface() {
               type="button"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add {config.nounLabel}
+              {t("codex.typePage.actions.add", { noun: config.nounLabel })}
             </Button>
           )}
         </div>
@@ -270,7 +313,7 @@ function CodexTypeInterface() {
                     <CardTitle className="break-words">{entry.label}</CardTitle>
                     <div className="flex shrink-0 gap-1">
                       <Button
-                        aria-label={`Edit ${entry.label}`}
+                        aria-label={t("codex.typePage.aria.edit", { name: entry.label })}
                         onClick={() => {
                           setEditingEntry(entry)
                           setDialogOpen(true)
@@ -282,7 +325,7 @@ function CodexTypeInterface() {
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        aria-label={`Delete ${entry.label}`}
+                        aria-label={t("codex.typePage.aria.delete", { name: entry.label })}
                         onClick={() => setDeletingEntry(entry)}
                         size="icon"
                         type="button"
@@ -295,7 +338,7 @@ function CodexTypeInterface() {
                 </CardHeader>
                 <CardContent>
                   <p className="whitespace-pre-wrap text-muted-foreground text-sm">
-                    {entry.description || "No description yet."}
+                    {entry.description || t("codex.typePage.emptyDescriptionShort")}
                   </p>
                 </CardContent>
               </Card>
@@ -306,9 +349,11 @@ function CodexTypeInterface() {
         {!isLoading && binding && entries.length === 0 && (
           <div className="py-12 text-center">
             <IconComponent className="mx-auto mb-4 h-16 w-16 opacity-50" />
-            <h3 className="mb-2 font-medium text-xl">No {config.title.toLowerCase()} yet</h3>
+            <h3 className="mb-2 font-medium text-xl">
+              {t("codex.typePage.empty.title", { type: config.titleLower })}
+            </h3>
             <p className="mb-6 text-muted-foreground">
-              Create your first {config.nounLabel.toLowerCase()} to start building your story world.
+              {t("codex.typePage.empty.description", { noun: config.nounLabelLower })}
             </p>
             <Button
               onClick={() => {
@@ -318,7 +363,7 @@ function CodexTypeInterface() {
               type="button"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add {config.nounLabel}
+              {t("codex.typePage.actions.add", { noun: config.nounLabel })}
             </Button>
           </div>
         )}
@@ -350,20 +395,25 @@ function CodexTypeInterface() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {config.nounLabel}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("codex.typePage.delete.title", { noun: config.nounLabel })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deletingEntry?.label}</strong>? This action
-              cannot be undone.
+              {t("codex.typePage.delete.description.prefix")}{" "}
+              <strong>{deletingEntry?.label}</strong>
+              {t("codex.typePage.delete.description.suffix")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteMutation.isPending}
               onClick={() => deletingEntry && deleteMutation.mutate(deletingEntry.id)}
             >
-              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+              {deleteMutation.isPending ? t("codex.typePage.delete.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

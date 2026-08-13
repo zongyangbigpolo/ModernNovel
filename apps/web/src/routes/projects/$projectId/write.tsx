@@ -8,33 +8,11 @@ import { StatusBar } from "@/components/status-bar"
 import TiptapEditor from "@/components/tiptap-editor"
 import { Button } from "@/components/ui/button"
 import { ApiError, api } from "@/lib/api"
-import { type SaveState, saveStatusText } from "@/lib/save-status"
+import { useI18n } from "@/lib/i18n"
+import type { SaveState } from "@/lib/save-status"
 import { countWordsInHtml } from "@/lib/word-count"
 
 const AUTOSAVE_DELAY_MS = 1500
-
-const WRITE_TOUR_STEPS: TourStep[] = [
-  {
-    target: '[data-tour="editor"]',
-    title: "Your manuscript",
-    body: "Write here — everything saves automatically as you type. Formatting lives in the toolbar above.",
-  },
-  {
-    target: '[data-tour="chapters"]',
-    title: "Chapters",
-    body: "Create, rename, and reorder chapters. Word counts update live as you write.",
-  },
-  {
-    target: '[data-tour="ai-assistant"]',
-    title: "AI assistant",
-    body: "Chat with an assistant that knows your project and characters, then insert its suggestions straight into the manuscript. Toggle it with ⌘J.",
-  },
-  {
-    target: '[data-tour="story-map"]',
-    title: "Map your story",
-    body: "Plan visually: describe your story in one sentence and expand it into acts, chapters, and scenes with AI — then promote chapters back into the manuscript.",
-  },
-]
 
 export const Route = createFileRoute("/projects/$projectId/write")({
   component: WriteInterface,
@@ -44,6 +22,30 @@ function WriteInterface() {
   const { projectId } = Route.useParams()
   const queryClient = useQueryClient()
   const tour = useTour("openwrite-tour-write-v1")
+  const { t } = useI18n()
+
+  const writeTourSteps: TourStep[] = [
+    {
+      target: '[data-tour="editor"]',
+      title: t("editor.write.tour.manuscript.title"),
+      body: t("editor.write.tour.manuscript.body"),
+    },
+    {
+      target: '[data-tour="chapters"]',
+      title: t("editor.write.tour.chapters.title"),
+      body: t("editor.write.tour.chapters.body"),
+    },
+    {
+      target: '[data-tour="ai-assistant"]',
+      title: t("editor.write.tour.aiAssistant.title"),
+      body: t("editor.write.tour.aiAssistant.body"),
+    },
+    {
+      target: '[data-tour="story-map"]',
+      title: t("editor.write.tour.storyMap.title"),
+      body: t("editor.write.tour.storyMap.body"),
+    },
+  ]
 
   const { data: chapters = [], isLoading: chaptersLoading } = useQuery({
     queryKey: ["chapters", projectId],
@@ -134,9 +136,9 @@ function WriteInterface() {
         conflictRef.current = true
         pendingRef.current.dirty = false
         setSaveState("conflict")
-        toast.error("This chapter was edited elsewhere.", {
-          description: "Reload to get the latest version. Unsaved changes here will be lost.",
-          action: { label: "Reload", onClick: reloadChapter },
+        toast.error(t("editor.write.chapterEditedElsewhere"), {
+          description: t("editor.write.reloadLatestVersion"),
+          action: { label: t("editor.write.reload"), onClick: reloadChapter },
           duration: Number.POSITIVE_INFINITY,
         })
         return
@@ -195,7 +197,8 @@ function WriteInterface() {
   )
 
   const createFirstChapter = useMutation({
-    mutationFn: async () => await api.chapters.create(projectId),
+    mutationFn: async () =>
+      await api.chapters.create(projectId, t("editor.chapterList.defaultTitle", { number: 1 })),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["chapters", projectId] })
       setSelectedChapterId(result.id)
@@ -218,7 +221,9 @@ function WriteInterface() {
   if (chaptersLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading your manuscript…</div>
+        <div className="animate-pulse text-muted-foreground">
+          {t("editor.write.loadingManuscript")}
+        </div>
       </div>
     )
   }
@@ -237,17 +242,19 @@ function WriteInterface() {
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             {createFirstChapter.isError ? (
               <>
-                <p className="text-muted-foreground">Every novel starts with a first chapter.</p>
+                <p className="text-muted-foreground">{t("editor.write.everyNovelStarts")}</p>
                 <Button
                   disabled={createFirstChapter.isPending}
                   onClick={() => createFirstChapter.mutate()}
                   type="button"
                 >
-                  Create Chapter 1
+                  {t("editor.write.createChapterOne")}
                 </Button>
               </>
             ) : (
-              <p className="animate-pulse text-muted-foreground">Preparing your first chapter…</p>
+              <p className="animate-pulse text-muted-foreground">
+                {t("editor.write.preparingFirstChapter")}
+              </p>
             )}
           </div>
         )}
@@ -257,20 +264,23 @@ function WriteInterface() {
             <div className="flex-1 overflow-auto" data-tour="editor">
               {contentLoading || !doc ? (
                 <div className="flex h-full items-center justify-center">
-                  <div className="animate-pulse text-muted-foreground">Loading chapter…</div>
+                  <div className="animate-pulse text-muted-foreground">
+                    {t("editor.write.loadingChapter")}
+                  </div>
                 </div>
               ) : (
                 <TiptapEditor
                   content={doc.content}
                   key={`${selectedChapterId}:${doc.updatedAt}`}
                   onUpdate={handleEditorUpdate}
-                  placeholder="Begin your story... Ask the AI assistant for help with characters, plot, or writing style."
+                  placeholder={t("editor.write.editorPlaceholder")}
                 />
               )}
             </div>
             <StatusBar
-              lastSavedText={saveStatusText(saveState, savedAt)}
               onShowGuide={tour.start}
+              savedAt={savedAt}
+              saveState={saveState}
               wordCount={wordCount}
             />
           </>
@@ -282,7 +292,7 @@ function WriteInterface() {
       <GuidedTour
         onFinish={tour.finish}
         open={tour.open && chapters.length > 0 && Boolean(doc)}
-        steps={WRITE_TOUR_STEPS}
+        steps={writeTourSteps}
       />
     </div>
   )

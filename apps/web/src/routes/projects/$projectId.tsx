@@ -4,11 +4,9 @@ import { Sparkles } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { AIChatContent } from "@/components/ai-chat-content"
-
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { ProjectSidebar } from "@/components/project-sidebar"
-
 import { Button } from "@/components/ui/button"
-
 import {
   Sheet,
   SheetContent,
@@ -18,10 +16,12 @@ import {
 } from "@/components/ui/sheet"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import UserMenu from "@/components/user-menu"
 import WriteHeader from "@/components/write-header"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { getActiveEditor } from "@/lib/active-editor"
 import { api } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/projects/$projectId")({
   component: WriteLayout,
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/projects/$projectId")({
 function WriteLayout() {
   const { projectId } = Route.useParams()
   const isMobile = useIsMobile()
+  const { t } = useI18n()
   // On mobile the assistant is a full-screen sheet, so it must not auto-open
   // over the editor; on desktop it's a docked sidebar that opens by default.
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
@@ -77,7 +78,7 @@ function WriteLayout() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="animate-pulse">Loading project...</div>
+        <div className="animate-pulse">{t("editor.write.loadingProject")}</div>
       </div>
     )
   }
@@ -86,8 +87,8 @@ function WriteLayout() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-2 font-semibold text-2xl">Project not found</h2>
-          <Link to="/dashboard/projects">Back to Projects</Link>
+          <h2 className="mb-2 font-semibold text-2xl">{t("editor.write.projectNotFound")}</h2>
+          <Link to="/dashboard/projects">{t("editor.write.backToProjects")}</Link>
         </div>
       </div>
     )
@@ -105,28 +106,31 @@ function WriteLayout() {
           <div className="flex h-16 items-center justify-between border-b bg-background/95 pr-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <WriteHeader
               breadcrumbs={[
-                { label: "Projects", to: "/dashboard/projects" },
+                { label: t("editor.write.projects"), to: "/dashboard/projects" },
                 { label: project.title },
               ]}
             />
 
-            {/* AI Assistant Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-tour="ai-assistant"
-                  onClick={toggleSidebar}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span className="sr-only">Toggle AI Assistant</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>AI Assistant (⌘J)</p>
-              </TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1">
+              <LanguageSwitcher />
+              <UserMenu compact />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-tour="ai-assistant"
+                    onClick={toggleSidebar}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span className="sr-only">{t("editor.write.toggleAiAssistant")}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{t("editor.write.aiAssistantShortcut")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Page Content */}
@@ -140,8 +144,10 @@ function WriteLayout() {
           <Sheet onOpenChange={setRightSidebarOpen} open={rightSidebarOpen}>
             <SheetContent className="w-[18rem] bg-background p-0" side="right">
               <SheetHeader className="sr-only">
-                <SheetTitle>AI Writing Assistant</SheetTitle>
-                <SheetDescription>AI-powered writing help and suggestions</SheetDescription>
+                <SheetTitle>{t("editor.write.aiWritingAssistant")}</SheetTitle>
+                <SheetDescription>
+                  {t("editor.write.aiWritingAssistantDescription")}
+                </SheetDescription>
               </SheetHeader>
               <AIChatContent onInsertText={handleInsertText} projectId={projectId} />
             </SheetContent>

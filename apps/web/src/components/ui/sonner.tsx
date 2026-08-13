@@ -1,13 +1,16 @@
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useI18n } from "@/lib/i18n"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  const { t } = useI18n()
 
   return (
     <Sonner
       className="toaster group"
       closeButton
+      containerAriaLabel={t("notifications.label")}
       duration={4000}
       expand={true}
       gap={12}
@@ -22,6 +25,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       theme={theme as ToasterProps["theme"]}
       toastOptions={{
+        closeButtonAriaLabel: t("common.close"),
         style: {
           border: "1px solid var(--border)",
         },

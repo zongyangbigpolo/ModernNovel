@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Skeleton } from "./ui/skeleton"
 
 export function WorkspaceSwitcher() {
   const queryClient = useQueryClient()
   const { data: session } = authClient.useSession()
+  const { t } = useI18n()
   const organizationsQuery = useQuery({
     queryKey: ["organizations"],
     queryFn: async () => {
@@ -51,8 +53,8 @@ export function WorkspaceSwitcher() {
       onValueChange={(organizationId) => switchMutation.mutate(organizationId)}
       value={activeId}
     >
-      <SelectTrigger aria-label="Active workspace" className="w-44">
-        <SelectValue placeholder="Select workspace" />
+      <SelectTrigger aria-label={t("workspaceSwitcher.activeWorkspace")} className="w-44">
+        <SelectValue placeholder={t("workspaceSwitcher.selectWorkspace")} />
       </SelectTrigger>
       <SelectContent>
         {organizations.map((organization) => (

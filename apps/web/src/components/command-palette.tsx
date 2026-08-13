@@ -19,10 +19,12 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
+import { useI18n } from "@/lib/i18n"
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const { t } = useI18n()
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -42,37 +44,42 @@ export function CommandPalette() {
   }
 
   return (
-    <CommandDialog onOpenChange={setOpen} open={open}>
-      <CommandInput placeholder="Type a command or search..." />
+    <CommandDialog
+      description={t("commandPalette.description")}
+      onOpenChange={setOpen}
+      open={open}
+      title={t("commandPalette.title")}
+    >
+      <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
 
-        <CommandGroup heading="Navigation">
+        <CommandGroup heading={t("commandPalette.groupNavigation")}>
           <CommandItem onSelect={() => runCommand(() => navigate({ to: "/dashboard" }))}>
             <HomeIcon />
-            Dashboard
+            {t("commandPalette.navDashboard")}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => navigate({ to: "/dashboard/projects" }))}>
             <BookOpenIcon />
-            Projects
+            {t("commandPalette.navProjects")}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => navigate({ to: "/dashboard/ai" }))}>
             <PaletteIcon />
-            AI Providers
+            {t("commandPalette.navAI")}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => navigate({ to: "/dashboard/settings" }))}>
             <SettingsIcon />
-            Settings
+            {t("commandPalette.navSettings")}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => navigate({ to: "/dashboard/team" }))}>
             <UsersIcon />
-            Team
+            {t("commandPalette.navTeam")}
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={t("commandPalette.groupActions")}>
           <CommandItem
             onSelect={() =>
               runCommand(() => {
@@ -81,7 +88,7 @@ export function CommandPalette() {
             }
           >
             <PlusIcon />
-            Create New Project
+            {t("commandPalette.actionCreateProject")}
           </CommandItem>
           <CommandItem
             onSelect={() =>
@@ -91,20 +98,20 @@ export function CommandPalette() {
             }
           >
             <SearchIcon />
-            Search Projects
+            {t("commandPalette.actionSearchProjects")}
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        <CommandGroup heading="Quick Links">
+        <CommandGroup heading={t("commandPalette.groupQuickLinks")}>
           <CommandItem onSelect={() => runCommand(() => window.open("/privacy", "_blank"))}>
             <FileTextIcon />
-            Privacy Policy
+            {t("commandPalette.linkPrivacy")}
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => window.open("/terms", "_blank"))}>
             <FileTextIcon />
-            Terms of Service
+            {t("commandPalette.linkTerms")}
           </CommandItem>
         </CommandGroup>
       </CommandList>

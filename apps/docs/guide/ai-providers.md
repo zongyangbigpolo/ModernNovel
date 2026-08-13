@@ -1,16 +1,15 @@
 # AI Providers
 
-Connect your favorite AI services to OpenWrite for enhanced writing assistance. Manage multiple providers, track usage, and seamlessly switch between different AI models.
+Connect your preferred AI services to ModernNovel and choose the default model used by the writing assistant.
 
 ## Overview
 
-OpenWrite's AI Providers system allows you to:
+ModernNovel's AI Providers system allows you to:
 
-- **Connect multiple AI services** - Use OpenRouter, OpenAI, Anthropic, and more
+- **Connect multiple AI services** - Use OpenRouter, Kimi, DeepSeek, Qwen, MiniMax, OpenAI, Anthropic, Gemini, and more
 - **Secure credential management** - API keys are encrypted and safely stored
-- **One-click OAuth connections** - Easy setup with supported providers
-- **Usage tracking** - Monitor your API usage and costs
-- **Provider switching** - Switch between providers based on your needs
+- **One-click OAuth connections** - Connect OpenRouter with PKCE
+- **Web-based configuration** - Set model IDs and compatible API endpoints without editing environment files
 
 ## Getting Started
 
@@ -18,8 +17,8 @@ OpenWrite's AI Providers system allows you to:
 
 1. **Navigate to Settings** → **AI Providers**
 2. **Choose a Provider** from the available options
-3. **Connect via OAuth** (recommended) or **Enter API Key manually**
-4. **Set as Default** if this will be your primary provider
+3. Enter the recommended model or another model ID supported by your account
+4. **Connect via OAuth** for OpenRouter or **enter an API key manually**
 
 ### OpenRouter (Recommended)
 
@@ -33,8 +32,8 @@ OpenRouter provides access to 200+ AI models from various providers through a si
 
 1. Click **"Connect OpenRouter"** in the AI Providers section
 2. You'll be redirected to OpenRouter's secure login page
-3. **Authorize OpenWrite** to access your account
-4. **Return to OpenWrite** - your connection is now active!
+3. **Authorize ModernNovel** to access your account
+4. **Return to ModernNovel** - your connection is now active!
 
 The OAuth connection is secured using PKCE (Proof Key for Code Exchange), ensuring your credentials are never exposed.
 
@@ -42,22 +41,7 @@ The OAuth connection is secured using PKCE (Proof Key for Code Exchange), ensuri
 
 ### Provider Settings
 
-Each connected provider has configurable options:
-
-- **Label** - Custom name for easy identification
-- **Active Status** - Enable/disable the provider
-- **Default Provider** - Set as primary for new writing sessions
-- **Usage Limits** - Set spending or request limits
-- **Supported Models** - View available AI models
-
-### Usage Monitoring
-
-Track your AI usage across all providers:
-
-- **Current Usage** - Requests made this billing period
-- **Remaining Credits** - Available credits or requests
-- **Usage History** - Historical usage patterns
-- **Cost Tracking** - Estimated costs (where available)
+When connecting a provider, configure its API key, default model, and (for OpenAI-compatible providers) API base URL. To replace a saved configuration, disconnect it and reconnect it with the new values.
 
 ### Security Features
 
@@ -68,25 +52,23 @@ Track your AI usage across all providers:
 
 ## Provider Comparison
 
-| Feature | OpenRouter | OpenAI | Anthropic | Ollama |
-|---------|------------|--------|-----------|---------|
-| **Connection** | OAuth PKCE | API Key | API Key | Direct |
-| **Models** | 200+ models | GPT series | Claude series | Local models |
-| **Pricing** | Pay-per-use | Subscription/Pay-per-use | Pay-per-use | Free (local) |
-| **Setup Difficulty** | Easy | Medium | Medium | Advanced |
-| **Best For** | Variety & cost optimization | Latest GPT models | Reasoning & analysis | Privacy & local inference |
+| Provider | Default model | Default endpoint |
+| --- | --- | --- |
+| OpenRouter | `openrouter/auto` | Managed by OpenRouter |
+| Kimi | `kimi-k3` | `https://api.moonshot.cn/v1` |
+| DeepSeek | `deepseek-v4-pro` | `https://api.deepseek.com` |
+| Qwen | `qwen3.8-max` | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| MiniMax | `MiniMax-M3` | `https://api.minimaxi.com/v1` |
+| OpenAI | `gpt-5.6` | `https://api.openai.com/v1` |
+| Anthropic | `claude-sonnet-5` | Native Anthropic Messages API |
+| Gemini | `gemini-3.6-flash` | Google OpenAI-compatible endpoint |
+| Ollama | `qwen3` | `http://localhost:11434` |
 
 ## AI Model Selection
 
-### OpenRouter Models
+The connection dialog suggests current model IDs but also accepts custom IDs supported by your provider account. A model explicitly supplied by an AI request overrides the saved default model.
 
-Popular models available through OpenRouter:
-
-- **GPT-4 Turbo** - Latest OpenAI model with 128k context
-- **Claude 3.5 Sonnet** - Anthropic's most capable model
-- **Llama 3.1 405B** - Meta's largest open-source model
-- **Gemini Pro** - Google's multimodal model
-- **Command R+** - Cohere's enterprise model
+For Kimi and MiniMax, mainland China and international API keys normally use different endpoints and are not interchangeable. Qwen enterprise or regional accounts may require a dedicated Workspace endpoint. ModernNovel accepts either a base URL or a complete `/chat/completions` URL.
 
 ### Choosing the Right Model
 
@@ -102,17 +84,7 @@ Consider these factors when selecting models:
 
 ### Creative Writing
 
-**Recommended Setup:**
-- **Primary**: OpenRouter with Claude 3.5 Sonnet
-- **Fallback**: OpenRouter with GPT-4 Turbo
-- **Budget Option**: OpenRouter with Llama 3.1 70B
-
-### Technical Writing
-
-**Recommended Setup:**
-- **Primary**: OpenAI GPT-4 Turbo
-- **Fallback**: OpenRouter with Claude 3.5 Sonnet
-- **Code Examples**: OpenRouter with Code Llama
+Start with OpenRouter's automatic routing, a provider's current general-purpose model, or a locally installed Qwen model through Ollama. Compare output quality and cost using your own manuscript samples before committing to one model.
 
 ### Privacy-Focused Writing
 

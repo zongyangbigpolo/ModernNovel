@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/context-menu"
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 import { api, type Character } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface CharacterSidebarSectionProps {
   isExpanded: boolean
@@ -29,6 +30,7 @@ export function CharacterSidebarSection({
   onToggle,
   onOpenCodexModal,
 }: CharacterSidebarSectionProps) {
+  const { t } = useI18n()
   const [characterDialogOpen, setCharacterDialogOpen] = useState(false)
   const [characterDialogMode, setCharacterDialogMode] = useState<"create" | "edit">("create")
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null)
@@ -72,7 +74,7 @@ export function CharacterSidebarSection({
                 <ChevronRight className="h-4 w-4" />
               )}
               <Users className="h-4 w-4" />
-              <span>Characters</span>
+              <span>{t("codex.types.characters.label")}</span>
               <Badge className="ml-auto" variant="secondary">
                 {characters.length}
               </Badge>
@@ -87,7 +89,7 @@ export function CharacterSidebarSection({
                 variant="ghost"
               >
                 <Plus className="h-4 w-4" />
-                <span>New</span>
+                <span>{t("common.new")}</span>
               </Button>
               {characters.map((character) => (
                 <ContextMenu key={character.id}>
@@ -105,11 +107,11 @@ export function CharacterSidebarSection({
                   <ContextMenuContent>
                     <ContextMenuItem onClick={() => onOpenCodexModal("characters", character.name)}>
                       <FileText className="mr-2 h-4 w-4" />
-                      View Details
+                      {t("codex.sidebar.viewDetails")}
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => handleEditCharacter(character)}>
                       <Edit className="mr-2 h-4 w-4" />
-                      Edit Character
+                      {t("codex.character.actions.edit")}
                     </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem
@@ -117,7 +119,7 @@ export function CharacterSidebarSection({
                       onClick={() => handleDeleteCharacter(character)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Character
+                      {t("codex.character.delete.action")}
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>

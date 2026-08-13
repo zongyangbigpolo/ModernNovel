@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/lib/i18n"
 
 /**
  * Lightweight shepherd-style walkthrough: a dimmed overlay with a spotlight
@@ -79,6 +80,7 @@ export function GuidedTour({ open, steps, onFinish }: GuidedTourProps) {
   // Steps whose targets exist right now (views differ by state, e.g. an empty
   // canvas has a premise card but no expand buttons)
   const [visibleSteps, setVisibleSteps] = useState<TourStep[]>([])
+  const { t } = useI18n()
 
   useEffect(() => {
     if (!open) {
@@ -152,13 +154,13 @@ export function GuidedTour({ open, steps, onFinish }: GuidedTourProps) {
         style={{ top: cardTop, left: cardLeft, width: CARD_WIDTH }}
       >
         <div className="mb-1 text-muted-foreground text-xs">
-          {index + 1} of {visibleSteps.length}
+          {t("guidedTour.step", { current: index + 1, total: visibleSteps.length })}
         </div>
         <h3 className="font-semibold text-sm">{step.title}</h3>
         <p className="mt-1 text-muted-foreground text-sm leading-relaxed">{step.body}</p>
         <div className="mt-4 flex items-center justify-between">
           <Button onClick={onFinish} size="sm" type="button" variant="ghost">
-            Skip
+            {t("guidedTour.skip")}
           </Button>
           <div className="flex gap-2">
             {index > 0 && (
@@ -168,7 +170,7 @@ export function GuidedTour({ open, steps, onFinish }: GuidedTourProps) {
                 type="button"
                 variant="outline"
               >
-                Back
+                {t("guidedTour.back")}
               </Button>
             )}
             <Button
@@ -176,7 +178,7 @@ export function GuidedTour({ open, steps, onFinish }: GuidedTourProps) {
               size="sm"
               type="button"
             >
-              {isLast ? "Done" : "Next"}
+              {isLast ? t("guidedTour.done") : t("guidedTour.next")}
             </Button>
           </div>
         </div>

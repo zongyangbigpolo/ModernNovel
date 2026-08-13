@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Logo } from "@/components/ui/logo"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -28,6 +29,7 @@ async function fetchSession() {
 
 function HomeComponent() {
   const navigate = Route.useNavigate()
+  const { t } = useI18n()
   const sessionQuery = useQuery({
     queryKey: ["session"],
     queryFn: fetchSession,
@@ -45,27 +47,24 @@ function HomeComponent() {
       <header className="flex items-center justify-between">
         <Logo size="lg" />
         <Button asChild variant="ghost">
-          <Link to="/login">Sign in</Link>
+          <Link to="/login">{t("auth.signIn")}</Link>
         </Button>
       </header>
 
       <section className="flex flex-1 flex-col items-center justify-center py-20 text-center">
-        <p className="mb-4 text-muted-foreground text-sm">
-          A focused workspace for long-form writing
-        </p>
+        <p className="mb-4 text-muted-foreground text-sm">{t("landing.header.tagline")}</p>
         <h1 className="max-w-3xl text-balance font-semibold text-5xl tracking-tight md:text-7xl">
-          Turn your next idea into a finished novel.
+          {t("landing.hero.title")}
         </h1>
         <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-          Plan your world, write chapters, collaborate with your team, and use the AI model you
-          already trust.
+          {t("landing.hero.description")}
         </p>
         <div className="mt-8 flex gap-3">
           <Button asChild size="lg">
-            <Link to="/register">Create an account</Link>
+            <Link to="/register">{t("landing.hero.createAccount")}</Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link to="/login">Open workspace</Link>
+            <Link to="/login">{t("landing.hero.openWorkspace")}</Link>
           </Button>
         </div>
       </section>
@@ -74,28 +73,22 @@ function HomeComponent() {
         <Card>
           <CardHeader>
             <BookOpen className="h-5 w-5" />
-            <CardTitle>Write without clutter</CardTitle>
-            <CardDescription>
-              Projects, chapters, characters, and story notes in one place.
-            </CardDescription>
+            <CardTitle>{t("landing.features.write.title")}</CardTitle>
+            <CardDescription>{t("landing.features.write.description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <Brain className="h-5 w-5" />
-            <CardTitle>Bring your own AI</CardTitle>
-            <CardDescription>
-              Connect hosted providers or a local Ollama instance in the browser.
-            </CardDescription>
+            <CardTitle>{t("landing.features.ai.title")}</CardTitle>
+            <CardDescription>{t("landing.features.ai.description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <Users className="h-5 w-5" />
-            <CardTitle>Share a workspace</CardTitle>
-            <CardDescription>
-              Invite collaborators and control who can manage your work.
-            </CardDescription>
+            <CardTitle>{t("landing.features.collaboration.title")}</CardTitle>
+            <CardDescription>{t("landing.features.collaboration.description")}</CardDescription>
           </CardHeader>
         </Card>
       </section>

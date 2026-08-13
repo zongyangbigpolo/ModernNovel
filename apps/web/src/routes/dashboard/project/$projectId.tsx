@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { AISidebarProvider, useAISidebar } from "@/contexts/ai-sidebar-context"
 import { api } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/project/$projectId")({
   component: () => (
@@ -26,12 +27,11 @@ export const Route = createFileRoute("/dashboard/project/$projectId")({
 function ProjectLayout() {
   const { projectId: id } = Route.useParams()
   const location = useLocation()
+  const { locale, t } = useI18n()
   const { isOpen: aiSidebarOpen, toggle: toggleAISidebar } = useAISidebar()
 
-  // Check if we're on the write page
   const isWritePage = location.pathname.includes("/write")
 
-  // Fetch project details
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: async () => {
@@ -43,7 +43,7 @@ function ProjectLayout() {
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <div className="animate-pulse">Loading project...</div>
+        <div className="animate-pulse">{t("projects.detail.loading")}</div>
       </div>
     )
   }
@@ -52,26 +52,29 @@ function ProjectLayout() {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-2 font-semibold text-2xl text-gray-900">Project not found</h2>
+          <h2 className="mb-2 font-semibold text-2xl text-gray-900">
+            {t("projects.detail.notFoundTitle")}
+          </h2>
           <Link to="/dashboard/projects">
-            <Button variant="outline">Back to Projects</Button>
+            <Button variant="outline">{t("projects.detail.backToProjects")}</Button>
           </Link>
         </div>
       </div>
     )
   }
 
+  const currentWords = project.currentWordCount.toLocaleString(locale)
+  const targetWords = project.targetWordCount?.toLocaleString(locale) || "∞"
+
   return (
     <div className="flex flex-1 flex-col">
-      {/* Header */}
       <div className="border-b px-6 py-4">
         <div className="flex flex-col space-y-4">
-          {/* Breadcrumb */}
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/dashboard/projects">Projects</Link>
+                  <Link to="/dashboard/projects">{t("projects.list.breadcrumb")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -81,7 +84,6 @@ function ProjectLayout() {
             </BreadcrumbList>
           </Breadcrumb>
 
-          {/* Title and Stats */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-bold text-2xl">{project.title}</h1>
@@ -91,8 +93,10 @@ function ProjectLayout() {
             <div className="flex items-center gap-4">
               <div className="min-w-32">
                 <div className="text-sm opacity-75">
-                  {project.currentWordCount.toLocaleString()} /{" "}
-                  {project.targetWordCount?.toLocaleString() || "∞"} words
+                  {t("projects.meta.wordsProgress", {
+                    current: currentWords,
+                    target: targetWords,
+                  })}
                 </div>
                 {project.targetWordCount ? (
                   <Progress
@@ -107,18 +111,16 @@ function ProjectLayout() {
 
               <ExportButton projectId={id} projectTitle={project.title} />
 
-              {/* AI Assistant Toggle - Only show on write page */}
               {isWritePage && (
                 <Button className="gap-2" onClick={toggleAISidebar} size="sm" variant="outline">
                   <MessageCircle className="h-4 w-4" />
-                  {aiSidebarOpen ? "Hide AI" : "Show AI"}
+                  {aiSidebarOpen ? t("projects.detail.hideAi") : t("projects.detail.showAi")}
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="mt-6 flex space-x-6">
           <Link
             activeProps={{ className: "text-blue-600 border-blue-600" }}
@@ -127,7 +129,7 @@ function ProjectLayout() {
             to="/projects/$projectId/write"
           >
             <Edit3 className="mr-2 h-4 w-4" />
-            Write
+            {t("projects.detail.nav.write")}
           </Link>
 
           <Link
@@ -137,7 +139,7 @@ function ProjectLayout() {
             to="/dashboard/project/$projectId/outline"
           >
             <FileText className="mr-2 h-4 w-4" />
-            Outline
+            {t("projects.detail.nav.outline")}
           </Link>
 
           <Link
@@ -147,7 +149,7 @@ function ProjectLayout() {
             to="/dashboard/project/$projectId/characters"
           >
             <Users className="mr-2 h-4 w-4" />
-            Characters
+            {t("projects.detail.nav.characters")}
           </Link>
 
           <Link
@@ -157,12 +159,11 @@ function ProjectLayout() {
             to="/dashboard/project/$projectId/settings"
           >
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            {t("projects.detail.nav.settings")}
           </Link>
         </div>
       </div>
 
-      {/* Main content */}
       <div className="flex-1 overflow-hidden">
         <Outlet />
       </div>

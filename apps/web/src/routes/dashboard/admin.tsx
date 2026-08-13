@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { adminApi } from "@/lib/api/admin"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/admin")({
   component: AdminPage,
@@ -29,6 +30,21 @@ export const Route = createFileRoute("/dashboard/admin")({
 function AdminPage() {
   const queryClient = useQueryClient()
   const { data: session } = authClient.useSession()
+  const { t } = useI18n()
+  const translateUserRole = (role: string | null | undefined) => {
+    switch (role ?? "user") {
+      case "admin":
+        return t("dashboard.roles.admin")
+      case "member":
+        return t("dashboard.roles.member")
+      case "owner":
+        return t("dashboard.roles.owner")
+      case "superadmin":
+        return t("dashboard.roles.superadmin")
+      default:
+        return t("dashboard.roles.user")
+    }
+  }
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
     queryFn: adminApi.listUsers,
@@ -42,7 +58,7 @@ function AdminPage() {
       adminApi.setUserDisabled(id, disabled),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] })
-      toast.success("User status updated")
+      toast.success(t("dashboard.admin.users.statusUpdated"))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -50,23 +66,21 @@ function AdminPage() {
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div>
-        <h1 className="font-semibold text-3xl">System administration</h1>
-        <p className="text-muted-foreground">Manage users and inspect every workspace.</p>
+        <h1 className="font-semibold text-3xl">{t("dashboard.admin.title")}</h1>
+        <p className="text-muted-foreground">{t("dashboard.admin.description")}</p>
       </div>
 
       <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="workspaces">Workspaces</TabsTrigger>
+          <TabsTrigger value="users">{t("dashboard.admin.tabs.users")}</TabsTrigger>
+          <TabsTrigger value="workspaces">{t("dashboard.admin.tabs.workspaces")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
           <Card>
             <CardHeader>
-              <CardTitle>Users</CardTitle>
-              <CardDescription>
-                Disabling a user immediately revokes their sessions.
-              </CardDescription>
+              <CardTitle>{t("dashboard.admin.users.title")}</CardTitle>
+              <CardDescription>{t("dashboard.admin.users.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               {usersQuery.isError && (
@@ -75,10 +89,12 @@ function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead>{t("common.user")}</TableHead>
+                    <TableHead>{t("dashboard.admin.users.table.role")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("dashboard.admin.users.table.action")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -88,10 +104,12 @@ function AdminPage() {
                         <div className="font-medium">{user.name}</div>
                         <div className="text-muted-foreground text-sm">{user.email}</div>
                       </TableCell>
-                      <TableCell>{user.role || "user"}</TableCell>
+                      <TableCell>{translateUserRole(user.role)}</TableCell>
                       <TableCell>
                         <Badge variant={user.banned ? "destructive" : "secondary"}>
-                          {user.banned ? "Disabled" : "Active"}
+                          {user.banned
+                            ? t("dashboard.admin.users.status.disabled")
+                            : t("dashboard.admin.users.status.active")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -107,7 +125,9 @@ function AdminPage() {
                           size="sm"
                           variant={user.banned ? "outline" : "destructive"}
                         >
-                          {user.banned ? "Enable" : "Disable"}
+                          {user.banned
+                            ? t("dashboard.admin.users.action.enable")
+                            : t("dashboard.admin.users.action.disable")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -121,10 +141,8 @@ function AdminPage() {
         <TabsContent value="workspaces">
           <Card>
             <CardHeader>
-              <CardTitle>All workspaces</CardTitle>
-              <CardDescription>
-                System-wide workspace visibility for the superadmin.
-              </CardDescription>
+              <CardTitle>{t("dashboard.admin.workspaces.title")}</CardTitle>
+              <CardDescription>{t("dashboard.admin.workspaces.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               {workspacesQuery.isError && (
@@ -133,10 +151,10 @@ function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>{t("common.name")}</TableHead>
+                    <TableHead>{t("dashboard.admin.workspaces.table.slug")}</TableHead>
+                    <TableHead>{t("dashboard.admin.workspaces.table.members")}</TableHead>
+                    <TableHead>{t("dashboard.admin.workspaces.table.created")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

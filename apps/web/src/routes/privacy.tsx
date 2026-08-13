@@ -2,12 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/privacy")({
   component: RouteComponent,
 })
 
 function RouteComponent() {
+  const { t } = useI18n()
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
@@ -15,47 +18,45 @@ function RouteComponent() {
         <Button asChild className="mb-4" variant="ghost">
           <Link className="flex items-center gap-2" to="/">
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            {t("legal.privacy.backToHome")}
           </Link>
         </Button>
-        <h1 className="mb-2 font-bold text-3xl">Privacy Policy</h1>
-        <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+        <h1 className="mb-2 font-bold text-3xl">{t("legal.privacy.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("legal.privacy.lastUpdated")} {new Date().toLocaleDateString()}
+        </p>
       </div>
 
       <div className="space-y-8">
         {/* Introduction */}
         <Card>
           <CardHeader>
-            <CardTitle>Introduction</CardTitle>
+            <CardTitle>{t("legal.privacy.introduction.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              ModernNovel ("we," "our," or "us") is committed to protecting your privacy. This
-              Privacy Policy explains how we collect, use, disclose, and safeguard your information
-              when you use our AI-powered writing platform.
-            </p>
+            <p>{t("legal.privacy.introduction.body")}</p>
           </CardContent>
         </Card>
 
         {/* Information We Collect */}
         <Card>
           <CardHeader>
-            <CardTitle>Information We Collect</CardTitle>
+            <CardTitle>{t("legal.privacy.collect.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <h3>Personal Information</h3>
+            <h3>{t("legal.privacy.collect.personalTitle")}</h3>
             <ul>
-              <li>Email address (for account creation and authentication)</li>
-              <li>Name (optional, for personalization)</li>
-              <li>Writing content and documents you create</li>
+              <li>{t("legal.privacy.collect.personal.email")}</li>
+              <li>{t("legal.privacy.collect.personal.name")}</li>
+              <li>{t("legal.privacy.collect.personal.content")}</li>
             </ul>
 
-            <h3>Automatically Collected Information</h3>
+            <h3>{t("legal.privacy.collect.autoTitle")}</h3>
             <ul>
-              <li>Usage data and analytics</li>
-              <li>Device and browser information</li>
-              <li>IP address and location data</li>
-              <li>Cookies and similar tracking technologies</li>
+              <li>{t("legal.privacy.collect.auto.usage")}</li>
+              <li>{t("legal.privacy.collect.auto.device")}</li>
+              <li>{t("legal.privacy.collect.auto.ip")}</li>
+              <li>{t("legal.privacy.collect.auto.cookies")}</li>
             </ul>
           </CardContent>
         </Card>
@@ -63,17 +64,17 @@ function RouteComponent() {
         {/* How We Use Your Information */}
         <Card>
           <CardHeader>
-            <CardTitle>How We Use Your Information</CardTitle>
+            <CardTitle>{t("legal.privacy.use.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>We use the information we collect to:</p>
+            <p>{t("legal.privacy.use.intro")}</p>
             <ul>
-              <li>Provide and maintain our writing platform</li>
-              <li>Authenticate your account and ensure security</li>
-              <li>Save and sync your writing content across devices</li>
-              <li>Improve our AI assistance features</li>
-              <li>Analyze usage patterns to enhance user experience</li>
-              <li>Communicate with you about updates and features</li>
+              <li>{t("legal.privacy.use.items.platform")}</li>
+              <li>{t("legal.privacy.use.items.auth")}</li>
+              <li>{t("legal.privacy.use.items.sync")}</li>
+              <li>{t("legal.privacy.use.items.ai")}</li>
+              <li>{t("legal.privacy.use.items.analytics")}</li>
+              <li>{t("legal.privacy.use.items.communicate")}</li>
             </ul>
           </CardContent>
         </Card>
@@ -81,100 +82,70 @@ function RouteComponent() {
         {/* Data Storage and Security */}
         <Card>
           <CardHeader>
-            <CardTitle>Data Storage and Security</CardTitle>
+            <CardTitle>{t("legal.privacy.security.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              Your data is stored securely using industry-standard encryption. We use Cloudflare D1
-              for data storage, which provides enterprise-grade security and compliance. Your
-              writing content is encrypted both in transit and at rest.
-            </p>
-            <p>
-              We implement appropriate technical and organizational measures to protect your
-              personal information against unauthorized access, alteration, disclosure, or
-              destruction.
-            </p>
+            <p>{t("legal.privacy.security.p1")}</p>
+            <p>{t("legal.privacy.security.p2")}</p>
           </CardContent>
         </Card>
 
         {/* Data Sharing */}
         <Card>
           <CardHeader>
-            <CardTitle>Data Sharing and Disclosure</CardTitle>
+            <CardTitle>{t("legal.privacy.sharing.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              We do not sell, trade, or otherwise transfer your personal information to third
-              parties, except:
-            </p>
+            <p>{t("legal.privacy.sharing.p1")}</p>
             <ul>
-              <li>With your explicit consent</li>
-              <li>To comply with legal obligations</li>
-              <li>To protect our rights and safety</li>
-              <li>In connection with a business transfer or merger</li>
+              <li>{t("legal.privacy.sharing.items.consent")}</li>
+              <li>{t("legal.privacy.sharing.items.legal")}</li>
+              <li>{t("legal.privacy.sharing.items.rights")}</li>
+              <li>{t("legal.privacy.sharing.items.transfer")}</li>
             </ul>
-            <p>
-              We may use anonymized and aggregated data for research and analytics purposes that
-              cannot be used to identify individual users.
-            </p>
+            <p>{t("legal.privacy.sharing.p2")}</p>
           </CardContent>
         </Card>
 
         {/* Your Rights */}
         <Card>
           <CardHeader>
-            <CardTitle>Your Rights</CardTitle>
+            <CardTitle>{t("legal.privacy.rights.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>You have the right to:</p>
+            <p>{t("legal.privacy.rights.intro")}</p>
             <ul>
-              <li>Access your personal data</li>
-              <li>Correct inaccurate information</li>
-              <li>Delete your account and associated data</li>
-              <li>Export your writing content</li>
-              <li>Opt out of marketing communications</li>
-              <li>Withdraw consent where applicable</li>
+              <li>{t("legal.privacy.rights.items.access")}</li>
+              <li>{t("legal.privacy.rights.items.correct")}</li>
+              <li>{t("legal.privacy.rights.items.delete")}</li>
+              <li>{t("legal.privacy.rights.items.export")}</li>
+              <li>{t("legal.privacy.rights.items.marketing")}</li>
+              <li>{t("legal.privacy.rights.items.withdraw")}</li>
             </ul>
-            <p>
-              To exercise these rights, please contact us using the information provided in the
-              "Contact Us" section below.
-            </p>
+            <p>{t("legal.privacy.rights.p2")}</p>
           </CardContent>
         </Card>
 
         {/* Cookies and Tracking */}
         <Card>
           <CardHeader>
-            <CardTitle>Cookies and Tracking Technologies</CardTitle>
+            <CardTitle>{t("legal.privacy.cookies.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              We use cookies and similar technologies to enhance your experience, remember your
-              preferences, and analyze usage patterns. You can control cookie preferences through
-              your browser settings.
-            </p>
-            <p>
-              Essential cookies are necessary for the platform to function properly and cannot be
-              disabled. Optional cookies help us improve our services and can be disabled at any
-              time.
-            </p>
+            <p>{t("legal.privacy.cookies.p1")}</p>
+            <p>{t("legal.privacy.cookies.p2")}</p>
           </CardContent>
         </Card>
 
         {/* Open Source */}
         <Card>
           <CardHeader>
-            <CardTitle>Open Source Commitment</CardTitle>
+            <CardTitle>{t("legal.privacy.openSource.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
+            <p>{t("legal.privacy.openSource.p1")}</p>
             <p>
-              ModernNovel is an open-source project licensed under AGPL-3.0. Our source code is
-              publicly available on GitHub, allowing for transparency and community review of our
-              privacy and security practices.
-            </p>
-            <p>
-              You can review our data handling practices, security implementations, and privacy
-              measures by examining our source code at{" "}
+              {t("legal.privacy.openSource.p2Prefix")}
               <a
                 className="text-primary hover:underline"
                 href="https://github.com/ilrein/openwrite"
@@ -183,7 +154,7 @@ function RouteComponent() {
               >
                 github.com/ilrein/openwrite
               </a>
-              .
+              {t("legal.privacy.openSource.p2Suffix")}
             </p>
           </CardContent>
         </Card>
@@ -191,34 +162,24 @@ function RouteComponent() {
         {/* Changes to Policy */}
         <Card>
           <CardHeader>
-            <CardTitle>Changes to This Privacy Policy</CardTitle>
+            <CardTitle>{t("legal.privacy.changes.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              We may update this Privacy Policy from time to time. We will notify you of any
-              significant changes by posting the new Privacy Policy on this page and updating the
-              "Last updated" date.
-            </p>
-            <p>
-              Your continued use of ModernNovel after any changes indicates your acceptance of the
-              updated Privacy Policy.
-            </p>
+            <p>{t("legal.privacy.changes.p1")}</p>
+            <p>{t("legal.privacy.changes.p2")}</p>
           </CardContent>
         </Card>
 
         {/* Contact */}
         <Card>
           <CardHeader>
-            <CardTitle>Contact Us</CardTitle>
+            <CardTitle>{t("legal.privacy.contact.title")}</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-            <p>
-              If you have any questions about this Privacy Policy or our privacy practices, please
-              contact us:
-            </p>
+            <p>{t("legal.privacy.contact.intro")}</p>
             <ul>
               <li>
-                GitHub Issues:{" "}
+                {t("legal.privacy.contact.githubIssues")}{" "}
                 <a
                   className="text-primary hover:underline"
                   href="https://github.com/ilrein/openwrite/issues"
@@ -228,7 +189,7 @@ function RouteComponent() {
                   github.com/ilrein/openwrite/issues
                 </a>
               </li>
-              <li>Email: zongyangpolo@gmail.com</li>
+              <li>{t("legal.privacy.contact.email")} zongyangpolo@gmail.com</li>
             </ul>
           </CardContent>
         </Card>

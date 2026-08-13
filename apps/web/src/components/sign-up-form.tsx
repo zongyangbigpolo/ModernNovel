@@ -4,12 +4,14 @@ import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 import z from "zod"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 import Loader from "./loader"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
 export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+  const { t } = useI18n()
   const navigate = useNavigate({
     from: "/",
   })
@@ -37,11 +39,9 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           }
         )
 
-        // Check if sign-up was successful (user object exists)
         if (result && typeof result === "object" && "user" in result && result.user) {
-          toast.success("Sign up successful")
+          toast.success(t("auth.feedback.signUpSuccess"))
 
-          // Function to fetch fresh session data
           const fetchSessionData = async () => {
             const baseUrl =
               import.meta.env.DEV && import.meta.env.VITE_SERVER_URL
@@ -60,38 +60,28 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           }
 
           try {
-            // Wait a moment for cookies to be set
             await new Promise((resolve) => setTimeout(resolve, 200))
-
-            // Fetch fresh session data and immediately update the query cache
             const sessionData = await fetchSessionData()
-
-            // Set the session data in the query cache to immediately update all components
             queryClient.setQueryData(["session"], sessionData)
-
-            // Also trigger a refetch to ensure all instances are updated
             queryClient.invalidateQueries({ queryKey: ["session"] })
-
-            // Navigate to dashboard
             navigate({
               to: "/dashboard",
             })
           } catch {
-            // Still navigate, dashboard will handle the session check
             navigate({
               to: "/dashboard",
             })
           }
         }
       } catch {
-        toast.error("Sign up failed")
+        toast.error(t("auth.feedback.signUpFailed"))
       }
     },
     validators: {
       onSubmit: z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
-        email: z.email("Invalid email address"),
-        password: z.string().min(6, "Password must be at least 6 characters"),
+        name: z.string().min(2, t("auth.validation.nameMinTwo")),
+        email: z.email(t("auth.validation.invalidEmail")),
+        password: z.string().min(6, t("auth.validation.passwordMinSix")),
       }),
     },
   })
@@ -102,7 +92,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
 
   return (
     <div className="mx-auto mt-10 w-full max-w-md p-6">
-      <h1 className="mb-6 text-center font-bold text-3xl">Create Account</h1>
+      <h1 className="mb-6 text-center font-bold text-3xl">{t("auth.signUpForm.title")}</h1>
 
       <form
         className="space-y-4"
@@ -116,7 +106,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           <form.Field name="name">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Name</Label>
+                <Label htmlFor={field.name}>{t("common.name")}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -138,7 +128,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
+                <Label htmlFor={field.name}>{t("auth.fields.email")}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -161,7 +151,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <Label htmlFor={field.name}>{t("auth.fields.password")}</Label>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -187,7 +177,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
               disabled={!state.canSubmit || state.isSubmitting}
               type="submit"
             >
-              {state.isSubmitting ? "Submitting..." : "Sign Up"}
+              {state.isSubmitting ? t("auth.signUpForm.submitting") : t("auth.signUpForm.submit")}
             </Button>
           )}
         </form.Subscribe>
@@ -199,7 +189,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
           onClick={onSwitchToSignIn}
           variant="link"
         >
-          Already have an account? Sign In
+          {t("auth.signUpForm.switchPrompt")}
         </Button>
       </div>
     </div>

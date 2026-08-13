@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
+import { useI18n } from "@/lib/i18n"
 
 interface ResetPasswordSearch {
   error: string
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/reset-password")({
 })
 
 function ResetPasswordPage() {
+  const { t } = useI18n()
   const { token, error } = Route.useSearch()
   const navigate = useNavigate()
   const [password, setPassword] = useState("")
@@ -34,24 +36,24 @@ function ResetPasswordPage() {
       return
     }
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters")
+      toast.error(t("auth.validation.passwordMinSix"))
       return
     }
     if (password !== confirm) {
-      toast.error("Passwords don't match")
+      toast.error(t("auth.feedback.passwordsDontMatch"))
       return
     }
     setSubmitting(true)
     try {
       const result = await authClient.resetPassword({ newPassword: password, token })
       if (result.error) {
-        toast.error(result.error.message || "Failed to reset password")
+        toast.error(result.error.message || t("auth.feedback.resetPasswordFailed"))
         return
       }
-      toast.success("Password updated — sign in with your new password")
+      toast.success(t("auth.feedback.resetPasswordSuccess"))
       navigate({ to: "/login" })
     } catch {
-      toast.error("Failed to reset password")
+      toast.error(t("auth.feedback.resetPasswordFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -61,22 +63,22 @@ function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="font-bold text-3xl">Choose a new password</h1>
+          <h1 className="font-bold text-3xl">{t("auth.resetPassword.title")}</h1>
         </div>
 
         {linkInvalid ? (
           <div className="space-y-4 text-center">
             <p className="rounded-lg border bg-muted/30 p-4 text-sm">
-              This reset link is invalid or has expired. Request a new one and try again.
+              {t("auth.resetPassword.invalidLink")}
             </p>
             <Button asChild className="w-full">
-              <Link to="/forgot-password">Request a new link</Link>
+              <Link to="/forgot-password">{t("auth.resetPassword.requestNewLink")}</Link>
             </Button>
           </div>
         ) : (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="new-password">New password</Label>
+              <Label htmlFor="new-password">{t("auth.fields.newPassword")}</Label>
               <Input
                 id="new-password"
                 onChange={(e) => setPassword(e.target.value)}
@@ -85,7 +87,7 @@ function ResetPasswordPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
+              <Label htmlFor="confirm-password">{t("auth.fields.confirmPassword")}</Label>
               <Input
                 id="confirm-password"
                 onChange={(e) => setConfirm(e.target.value)}
@@ -98,14 +100,16 @@ function ResetPasswordPage() {
               disabled={!(password && confirm) || submitting}
               type="submit"
             >
-              {submitting ? "Updating…" : "Update password"}
+              {submitting
+                ? t("auth.resetPassword.updating")
+                : t("auth.resetPassword.updatePassword")}
             </Button>
           </form>
         )}
 
         <p className="text-center text-muted-foreground text-sm">
           <Link className="underline-offset-4 hover:text-primary hover:underline" to="/login">
-            Back to sign in
+            {t("auth.backToSignIn")}
           </Link>
         </p>
       </div>

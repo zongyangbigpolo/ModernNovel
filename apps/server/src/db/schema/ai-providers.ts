@@ -11,7 +11,19 @@ export const aiProvider = sqliteTable(
 
     // Provider details
     provider: text("provider", {
-      enum: ["openrouter", "openai", "anthropic", "ollama", "groq", "gemini", "cohere"],
+      enum: [
+        "openrouter",
+        "openai",
+        "anthropic",
+        "ollama",
+        "groq",
+        "gemini",
+        "cohere",
+        "kimi",
+        "deepseek",
+        "qwen",
+        "minimax",
+      ],
     }).notNull(),
     providerUserId: text("provider_user_id"), // User ID from the provider (e.g., OpenRouter user ID)
 

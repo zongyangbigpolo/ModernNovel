@@ -23,12 +23,14 @@ import {
 } from "@/components/ui/sidebar"
 import UserMenu from "@/components/user-menu"
 import { api } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
 interface ProjectSidebarProps {
   projectId: string
 }
 
 interface CollapsibleSectionProps {
+  fallbackSecondaryLabel?: string
   icon: React.ComponentType<{ className?: string }>
   isExpanded: boolean
   items: Array<{ id: string; name: string; role?: string; type?: string }>
@@ -48,7 +50,10 @@ function CollapsibleSection({
   onToggle,
   onOpenModal,
   secondaryField,
+  fallbackSecondaryLabel,
 }: CollapsibleSectionProps) {
+  const { t } = useI18n()
+
   return (
     <SidebarMenuItem>
       <Collapsible onOpenChange={onToggle} open={isExpanded}>
@@ -75,22 +80,26 @@ function CollapsibleSection({
               variant="ghost"
             >
               <Plus className="h-4 w-4" />
-              <span>New</span>
+              <span>{t("common.new")}</span>
             </Button>
-            {items.map((item) => (
-              <Button
-                className="w-full justify-start"
-                key={item.id}
-                onClick={() => onOpenModal(sectionKey, item.name)}
-                size="sm"
-                variant="ghost"
-              >
-                <span className="truncate">{item.name}</span>
-                <span className="ml-auto text-muted-foreground text-xs">
-                  {item[secondaryField]}
-                </span>
-              </Button>
-            ))}
+            {items.map((item) => {
+              const secondaryValue = item[secondaryField] ?? fallbackSecondaryLabel
+
+              return (
+                <Button
+                  className="w-full justify-start"
+                  key={item.id}
+                  onClick={() => onOpenModal(sectionKey, item.name)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <span className="truncate">{item.name}</span>
+                  {secondaryValue ? (
+                    <span className="ml-auto text-muted-foreground text-xs">{secondaryValue}</span>
+                  ) : null}
+                </Button>
+              )
+            })}
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -99,6 +108,7 @@ function CollapsibleSection({
 }
 
 export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
+  const { t } = useI18n()
   const [isCodexModalOpen, setIsCodexModalOpen] = useState(false)
   const [codexModalConfig, setCodexModalConfig] = useState<{
     initialType?: string | null
@@ -120,7 +130,7 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
       return result.map((entry) => ({
         id: entry.id,
         name: entry.name,
-        type: entry.type || "General",
+        type: entry.type || undefined,
       }))
     },
   })
@@ -133,14 +143,14 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
       return result.map((thread) => ({
         id: thread.id,
         name: thread.title,
-        role: thread.status || "Planned",
+        role: thread.status || undefined,
       }))
     },
   })
 
   // For now, keeping notes as empty until there's a proper API endpoint
   // This could be extended to use lore entries with a specific type filter
-  const notes: Array<{ id: string; name: string; role: string }> = []
+  const notes: Array<{ id: string; name: string; role?: string }> = []
 
   const toggleCodexSection = (section: string) => {
     setExpandedCodexSections((prev) => ({
@@ -168,14 +178,14 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Structure</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("codex.sidebar.section.structure")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link params={{ projectId }} to="/projects/$projectId/write">
                       <PenTool />
-                      <span>Write</span>
+                      <span>{t("codex.sidebar.nav.write")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -183,7 +193,7 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   <SidebarMenuButton asChild>
                     <Link params={{ projectId }} to="/projects/$projectId/canvas">
                       <FileText />
-                      <span>Canvas</span>
+                      <span>{t("codex.sidebar.nav.canvas")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -192,10 +202,9 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Codex</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("codex.sidebar.section.codex")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Characters */}
                 <CharacterSidebarSection
                   isExpanded={expandedCodexSections.characters}
                   key="characters-section"
@@ -204,7 +213,6 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   projectId={projectId}
                 />
 
-                {/* Locations */}
                 <LocationSidebarSection
                   isExpanded={expandedCodexSections.locations}
                   key="locations-section"
@@ -213,8 +221,8 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   projectId={projectId}
                 />
 
-                {/* Lore */}
                 <CollapsibleSection
+                  fallbackSecondaryLabel={t("codex.sidebar.fallbackLoreType")}
                   icon={Scroll}
                   isExpanded={expandedCodexSections.lore}
                   items={loreEntries}
@@ -222,11 +230,11 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   onToggle={() => toggleCodexSection("lore")}
                   secondaryField="type"
                   sectionKey="lore"
-                  title="Lore"
+                  title={t("codex.types.lore.label")}
                 />
 
-                {/* Plot Threads */}
                 <CollapsibleSection
+                  fallbackSecondaryLabel={t("codex.sidebar.fallbackPlotStatus")}
                   icon={FileText}
                   isExpanded={expandedCodexSections.plot}
                   items={plotThreads}
@@ -234,10 +242,9 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   onToggle={() => toggleCodexSection("plot")}
                   secondaryField="role"
                   sectionKey="plot"
-                  title="Plot Threads"
+                  title={t("codex.types.plot.title")}
                 />
 
-                {/* Notes */}
                 <CollapsibleSection
                   icon={FileText}
                   isExpanded={expandedCodexSections.notes}
@@ -246,7 +253,7 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                   onToggle={() => toggleCodexSection("notes")}
                   secondaryField="role"
                   sectionKey="notes"
-                  title="Notes & Ideas"
+                  title={t("codex.types.notes.title")}
                 />
               </SidebarMenu>
             </SidebarGroupContent>
@@ -262,7 +269,6 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
         </SidebarFooter>
       </Sidebar>
 
-      {/* Codex Modal */}
       <CodexModal
         initialEntry={codexModalConfig.initialEntry}
         initialType={codexModalConfig.initialType}

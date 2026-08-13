@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -24,15 +24,20 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { api, type Character } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 
-const characterSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name is too long"),
-  description: z.string().optional(),
-  // role field removed - users can describe character roles freely in description
-  // appearance, personality, backstory, motivation removed - simplified to just name and description
-})
+const createCharacterSchema = (t: ReturnType<typeof useI18n>["t"]) =>
+  z.object({
+    name: z
+      .string()
+      .min(1, t("codex.character.validation.nameRequired"))
+      .max(100, t("codex.character.validation.nameTooLong")),
+    description: z.string().optional(),
+    // role field removed - users can describe character roles freely in description
+    // appearance, personality, backstory, motivation removed - simplified to just name and description
+  })
 
-type CharacterFormData = z.infer<typeof characterSchema>
+type CharacterFormData = z.infer<ReturnType<typeof createCharacterSchema>>
 
 interface CharacterDialogProps {
   character?: Character | null
@@ -49,7 +54,9 @@ export function CharacterDialog({
   character,
   mode,
 }: CharacterDialogProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient()
+  const characterSchema = useMemo(() => createCharacterSchema(t), [t])
 
   const form = useForm<CharacterFormData>({
     resolver: zodResolver(characterSchema),
@@ -75,29 +82,29 @@ export function CharacterDialog({
     mutationFn: (data: CharacterFormData) => api.characters.create(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["characters", projectId] })
-      toast.success("Character created successfully!")
+      toast.success(t("codex.character.feedback.created"))
       onOpenChange(false)
       form.reset()
     },
     onError: (error) => {
-      toast.error(`Failed to create character: ${error.message}`)
+      toast.error(t("codex.character.feedback.createFailed", { message: error.message }))
     },
   })
 
   const updateCharacterMutation = useMutation({
     mutationFn: (data: CharacterFormData) => {
       if (!character?.id) {
-        throw new Error("Character ID is required for updates")
+        throw new Error(t("codex.character.errors.missingId"))
       }
       return api.characters.update(projectId, character.id, data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["characters", projectId] })
-      toast.success("Character updated successfully!")
+      toast.success(t("codex.character.feedback.updated"))
       onOpenChange(false)
     },
     onError: (error) => {
-      toast.error(`Failed to update character: ${error.message}`)
+      toast.error(t("codex.character.feedback.updateFailed", { message: error.message }))
     },
   })
 
@@ -116,12 +123,14 @@ export function CharacterDialog({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === "create" ? "Create New Character" : `Edit ${character?.name}`}
+            {mode === "create"
+              ? t("codex.character.dialog.title.create")
+              : t("codex.character.dialog.title.edit", { name: character?.name ?? "" })}
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Add a new character to your project's codex."
-              : "Update the character's information."}
+              ? t("codex.character.dialog.description.create")
+              : t("codex.character.dialog.description.edit")}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,9 +141,13 @@ export function CharacterDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name *</FormLabel>
+                  <FormLabel>{t("common.name")} *</FormLabel>
                   <FormControl>
-                    <Input {...field} name="character_name" placeholder="Character name" />
+                    <Input
+                      {...field}
+                      name="character_name"
+                      placeholder={t("codex.character.placeholder.name")}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,11 +159,11 @@ export function CharacterDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t("common.description")}</FormLabel>
                   <FormControl>
                     <Textarea
                       className="min-h-[80px]"
-                      placeholder="Brief description of the character, including their role in the story"
+                      placeholder={t("codex.character.placeholder.description")}
                       {...field}
                     />
                   </FormControl>
@@ -168,14 +181,16 @@ export function CharacterDialog({
                 type="button"
                 variant="outline"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button disabled={isLoading} type="submit">
                 {(() => {
                   if (isLoading) {
-                    return "Saving..."
+                    return t("common.saving")
                   }
-                  return mode === "create" ? "Create Character" : "Update Character"
+                  return mode === "create"
+                    ? t("codex.character.actions.create")
+                    : t("codex.character.actions.update")
                 })()}
               </Button>
             </DialogFooter>
