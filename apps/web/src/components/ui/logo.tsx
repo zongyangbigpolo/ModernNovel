@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
@@ -9,6 +10,7 @@ interface LogoProps {
 }
 
 export function Logo({ className, to = "/", size = "md", showText = true }: LogoProps) {
+  const { t } = useI18n()
   const sizeClasses = {
     sm: "h-4 w-4",
     md: "h-5 w-5 sm:h-6 sm:w-6",
@@ -24,7 +26,7 @@ export function Logo({ className, to = "/", size = "md", showText = true }: Logo
   const content = (
     <>
       <svg
-        aria-label="ModernNovel brush mark"
+        aria-label={t("brand.logoLabel")}
         className={cn(sizeClasses[size])}
         fill="none"
         role="img"
@@ -49,7 +51,7 @@ export function Logo({ className, to = "/", size = "md", showText = true }: Logo
       </svg>
       {showText && (
         <span className={cn("font-semibold tracking-tight", textSizeClasses[size])}>
-          ModernNovel
+          {t("brand.name")}
         </span>
       )}
     </>

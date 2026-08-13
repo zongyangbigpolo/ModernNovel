@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronDown, ChevronRight, FileText, PenTool, Plus, Scroll } from "lucide-react"
+import {
+  BookOpenCheck,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  PenTool,
+  Plus,
+  Scroll,
+} from "lucide-react"
 import { useState } from "react"
 import { CharacterSidebarSection } from "@/components/character-sidebar-section"
 import CodexModal from "@/components/codex-modal"
@@ -194,6 +202,14 @@ export function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                     <Link params={{ projectId }} to="/projects/$projectId/canvas">
                       <FileText />
                       <span>{t("codex.sidebar.nav.canvas")}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link params={{ projectId }} to="/projects/$projectId/skills">
+                      <BookOpenCheck />
+                      <span>{t("codex.sidebar.nav.skills")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

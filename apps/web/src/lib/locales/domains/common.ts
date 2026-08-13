@@ -8,6 +8,8 @@ import type { Locale } from "@/lib/i18n"
  */
 export const common: Record<Locale, Record<string, string>> = {
   en: {
+    "brand.name": "ModernNovel",
+    "brand.logoLabel": "ModernNovel brush mark",
     "language.label": "Language",
     "language.english": "English",
     "language.chinese": "简体中文",
@@ -108,6 +110,8 @@ export const common: Record<Locale, Record<string, string>> = {
     "guidedTour.step": "{{current}} of {{total}}",
   },
   "zh-CN": {
+    "brand.name": "麻豆小说",
+    "brand.logoLabel": "麻豆小说毛笔标志",
     "language.label": "语言",
     "language.english": "English",
     "language.chinese": "简体中文",

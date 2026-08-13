@@ -71,9 +71,11 @@ describe("I18nProvider", () => {
     await waitFor(() => {
       expect(localStorage.getItem("modernnovel-locale")).toBe("zh-CN")
       expect(document.documentElement.lang).toBe("zh-CN")
+      expect(document.title).toBe("麻豆小说")
     })
 
     fireEvent.click(screen.getByRole("button", { name: "English" }))
     expect(screen.getByText("Dashboard")).toBeInTheDocument()
+    await waitFor(() => expect(document.title).toBe("ModernNovel"))
   })
 })

@@ -29,7 +29,7 @@ import { type WriterSkill, writerSkillsApi } from "@/lib/api/writer-skills"
 import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/dashboard/project/$projectId/settings")({
-  component: ProjectSettingsPage,
+  component: ProjectSettingsRoute,
 })
 
 const BUILT_IN_SKILL_TRANSLATIONS: Record<string, { checklistItems: number; prefix: string }> = {
@@ -68,8 +68,12 @@ function localizeBuiltInSkill(
   }
 }
 
-function ProjectSettingsPage() {
+function ProjectSettingsRoute() {
   const { projectId } = Route.useParams()
+  return <WriterSkillsPage projectId={projectId} />
+}
+
+export function WriterSkillsPage({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient()
   const { locale, t } = useI18n()
   const [format, setFormat] = useState<"markdown" | "json">("markdown")

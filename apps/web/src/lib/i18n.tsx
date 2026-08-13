@@ -37,6 +37,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = locale
+    document.title = translations[locale]["brand.name"]
     localStorage.setItem(STORAGE_KEY, locale)
   }, [locale])
 
