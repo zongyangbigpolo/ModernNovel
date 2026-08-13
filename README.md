@@ -240,24 +240,34 @@ ModernNovel 通过 Ollama 的 OpenAI-compatible `/v1/chat/completions` 接口调
 
 注意：部署在 Cloudflare Worker 后，Worker 中的 `localhost` 不是你的电脑。生产环境若要使用家中或局域网的 Ollama，需要提供受保护的公网 HTTPS 地址、Cloudflare Tunnel 或独立模型网关；不要把无鉴权的 Ollama 端口直接暴露到公网。
 
-## Writer Skill 与中文写作技巧
+## 作者技巧、风格记忆与持续学习
 
-### 使用方式
+作者技巧（Writer Skills）不是一次性聊天提示词，而是绑定到小说项目的长期创作规则。启用后，系统会在每次项目 AI 对话前自动加载这些规则；退出登录、关闭浏览器或中断创作后仍然有效。
+
+### 功能总览
 
 打开小说后进入：
 
 ```text
-Project → Settings → Writer Skills
+项目编辑器左侧 → 作者技巧
 ```
 
 在这里可以：
 
 - 启用或停用内置 Skill。
 - 导入自己的 Markdown/JSON Skill；导入后自动绑定并启用到当前小说。
-- 删除自己创建的 Skill。
-- 点击 **Learn from manuscript**，从当前小说章节生成持久风格档案。
+- 编辑或删除自己创建的 Skill。
+- 点击 **从手稿中学习**，从当前小说章节生成持久风格档案。
 
 Skill 与风格档案都存入 D1，并通过 `project_id` 绑定小说。关闭浏览器、退出登录或中断几个月后再次写作，后续 AI 对话仍会自动加载同一组规则和风格记忆。
+
+<p align="center">
+  <img src=".github/screenshots/writer-skills-overview.png" alt="麻豆小说作者技巧总览与持久风格记忆" width="100%" />
+</p>
+
+#### 持久风格记忆
+
+系统从已有章节的有限样本中提炼叙述声音、句式节奏、视角与时态、对话、意象、叙事节拍和避免项。学习结果保存在项目中，并在后续 AI 对话中持续注入，而不是只存在于当前聊天窗口。
 
 ### 三套内置 Skill
 
@@ -271,7 +281,27 @@ Skill 与风格档案都存入 D1，并通过 `project_id` 绑定小说。关闭
 
 来源 URL、许可证说明和版权归属会随 Skill 一起显示。
 
-### 导入 Markdown
+<p align="center">
+  <img src=".github/screenshots/writer-skills-built-in.png" alt="角色互动动力与参数化文风练习内置作者技巧" width="100%" />
+</p>
+
+#### 项目级启用与自定义
+
+每个 Skill 都有独立开关。内置 Skill 可以按小说启停；用户导入的 Skill 还可以继续编辑或删除。下图同时展示了长篇连续性检查和项目自定义的“中文场景自检”。
+
+<p align="center">
+  <img src=".github/screenshots/writer-skills-continuity-custom.png" alt="章节状态连续性与用户自定义中文场景自检" width="100%" />
+</p>
+
+### 导入自己的作者技巧
+
+网页支持直接粘贴 Markdown/JSON，也可以选择本地文件。建议导入抽象写作方法、结构规则和检查清单，不要导入整本小说、长篇版权原文或要求模型复刻某位在世作家的独特风格。
+
+<p align="center">
+  <img src=".github/screenshots/writer-skill-import.png" alt="通过 Markdown 或 JSON 导入作者技巧" width="100%" />
+</p>
+
+#### Markdown 格式
 
 一级标题和 `Instructions` 必填：
 
@@ -299,7 +329,7 @@ Skill 与风格档案都存入 D1，并通过 `project_id` 绑定小说。关闭
 
 JSON 格式支持 `name`、`description`、`instructions`、`checklist`、`examples`、`sourceUrl` 和 `sourceLicense`。单个导入文件上限 20KB；服务端会删除 HTML 和控制字符，并限制字段、列表和注入 Prompt 的长度。
 
-不建议导入整本小说、长篇原文或要求模型复刻某位在世作家的独特文风。更适合把资料整理成通用技巧、结构规则、自检清单和少量自有示例，并记录来源及授权状态。
+更适合把资料整理成通用技巧、结构规则、自检清单和少量自有示例，并记录来源及授权状态。
 
 ### 持久学习机制
 
