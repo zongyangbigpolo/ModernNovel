@@ -468,10 +468,9 @@ Worker 会同时部署 API 和 `apps/web/dist` 静态资源。
 | Secret | 用途 |
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API Token，需要 Workers Scripts 和 D1 编辑权限 |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
-| `BETTER_AUTH_SECRET` | Better Auth 签名密钥 |
-| `ADMIN_PASSWORD` | 超级管理员生产密码 |
-| `ENCRYPTION_KEY` | 32 字节 Base64 密钥，用于加密 AI API Key |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID；本项目为 `2698d39b7eea23d2780a04987ea12020` |
+
+`BETTER_AUTH_SECRET`、`ADMIN_PASSWORD` 和 `ENCRYPTION_KEY` 已直接保存在 Cloudflare Worker Secrets 中，后续部署会保留它们，不要在 GitHub 中重新生成或覆盖。
 
 配置一次后，日常更新流程就是：
 

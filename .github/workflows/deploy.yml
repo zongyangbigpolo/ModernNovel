@@ -60,14 +60,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: "./apps/server"
           command: deploy
-          secrets: |
-            BETTER_AUTH_SECRET
-            ADMIN_PASSWORD
-            ENCRYPTION_KEY
-        env:
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
       - name: Verify production health
         run: |

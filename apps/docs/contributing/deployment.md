@@ -1,6 +1,6 @@
-# OpenWrite Deployment Guide
+# ModernNovel Deployment Guide
 
-This guide covers deploying OpenWrite to Cloudflare using GitHub Actions.
+This guide covers deploying ModernNovel to Cloudflare using GitHub Actions.
 
 ## Prerequisites
 
@@ -16,13 +16,11 @@ Navigate to your GitHub repository → Settings → Secrets and Variables → Ac
 
 | Secret Name | Description | How to Get It |
 |-------------|-------------|---------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers and Pages permissions | Create at [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers Scripts and D1 edit permissions | Create at [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID | Found in the right sidebar of any Cloudflare dashboard page |
-| `BETTER_AUTH_SECRET` | Secret for Better Auth (32+ character random string) | Generate with `openssl rand -base64 32` |
-| `ADMIN_PASSWORD` | Initial password for `zongyangpolo@gmail.com` | Use a unique password of at least 8 characters |
-| `ENCRYPTION_KEY` | Encrypts AI provider API keys stored in D1 | Generate with `openssl rand -base64 32` |
 
 **Note**: The database ID is stored in `apps/server/wrangler.jsonc` and doesn't need to be a secret since it's not sensitive information.
+Application secrets (`BETTER_AUTH_SECRET`, `ADMIN_PASSWORD`, and `ENCRYPTION_KEY`) are configured once as Cloudflare Worker Secrets and are preserved by subsequent deployments.
 
 ### Creating Cloudflare API Token
 
