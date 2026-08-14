@@ -16,9 +16,8 @@
   "vars": {
     "NODE_ENV": "production",
     "ADMIN_EMAIL": "zongyangpolo@gmail.com",
-    // Add your deployed URL before production deployment:
-    // "CORS_ORIGIN": "https://your-domain.com",
-    // "BETTER_AUTH_URL": "https://your-domain.com"
+    "CORS_ORIGIN": "https://modernnovel.zongyangpolo.workers.dev",
+    "BETTER_AUTH_URL": "https://modernnovel.zongyangpolo.workers.dev"
   },
   // For sensitive data, use:
   // wrangler secret put SECRET_NAME
@@ -35,8 +34,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "openwrite-us-east-1",
-      "database_id": "9c50826a-1e7a-498c-ab1b-d1a73192cca9",
+      "database_name": "modernnovel",
+      "database_id": "108da80e-d9d9-47e6-a8e7-1e3c3692b87f",
       "preview_database_id": "local-test-db",
       "migrations_dir": "./src/db/migrations"
     }
