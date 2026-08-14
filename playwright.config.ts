@@ -19,7 +19,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "bun run e2e:server",
-    url: "http://localhost:3000/health",
+    url: "http://localhost:3000/api/health",
     timeout: 180_000,
     reuseExistingServer: !process.env.CI,
   },

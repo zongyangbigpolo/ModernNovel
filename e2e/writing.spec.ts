@@ -9,7 +9,6 @@ import { expect, type Page, test } from "@playwright/test"
 async function signUp(page: Page, tag: string): Promise<void> {
   const email = `e2e-${tag}-${Date.now()}@example.com`
   await page.goto("/register")
-  await page.getByLabel("Name").fill("E2E Tester")
   await page.getByLabel("Email").fill(email)
   await page.getByLabel("Password").fill("e2e-password-123")
   await page.getByRole("button", { name: "Create account" }).click()
