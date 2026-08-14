@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "wrangler deploy --dry-run",
-    "check-types": "tsc --noEmit",
+    "check-types": "wrangler types --env-interface CloudflareBindings && tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run",
     "test:watch": "vitest",
