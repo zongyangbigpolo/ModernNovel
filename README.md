@@ -2,12 +2,16 @@
 
 > 一个为中文长篇小说创作设计的开源 AI 工作台。
 
+[在线体验](https://modernnovel.zongyangpolo.workers.dev) ·
+[健康检查](https://modernnovel.zongyangpolo.workers.dev/api/health) ·
+[部署说明](#部署到-cloudflare)
+
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-6f5a8a.svg)](LICENSE.md)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178c6.svg)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers%20%2B%20D1-f38020.svg)
 ![Bun](https://img.shields.io/badge/Bun-1.3%2B-black.svg)
 
-麻豆小说把章节编辑、人物与地点设定、故事画布、项目级写作技巧和 AI 助手放进同一个 Workspace。它支持用户通过网页配置自己的模型 API Key，也可以连接本地 Ollama；后端和前端能够一起部署到 Cloudflare。
+麻豆小说是一个可自行部署的中英文 AI 长篇小说创作平台。它把章节编辑、人物与地点设定、故事画布、项目级作者技巧、持久风格记忆和 AI 助手放进同一个 Workspace，支持 Kimi、DeepSeek、通义千问、MiniMax、OpenAI、Claude、Gemini、OpenRouter 和本地 Ollama。
 
 > 当前版本适合作为个人创作工具、团队内部系统或二次开发基础。项目仍处于 POC 阶段，正式公开运营前请补充邮箱验证、机器人防护、监控告警和更严格的安全策略。
 
@@ -447,6 +451,58 @@ Worker 会同时部署 API 和 `apps/web/dist` 静态资源。
 4. 在 **AI 模型** 页面连接一个 Provider，不要把 Key 写入环境文件或仓库。
 5. 在 Cloudflare D1 控制台确认项目、章节和用户记录已经写入。
 6. 立即执行一次 `bun db:backup`，验证备份权限和保存位置。
+
+### 仓库更新后如何发布
+
+#### 自动部署（推荐）
+
+仓库中的 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) 已配置为：
+
+1. 代码推送到 `main`。
+2. GitHub Actions 先执行 CI。
+3. CI 全部通过后，自动执行 D1 迁移并部署 Cloudflare Worker。
+4. 部署完成后请求线上 `/api/health`；健康检查失败则工作流失败。
+
+需要在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中配置以下 Repository secrets：
+
+| Secret | 用途 |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token，需要 Workers Scripts 和 D1 编辑权限 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
+| `BETTER_AUTH_SECRET` | Better Auth 签名密钥 |
+| `ADMIN_PASSWORD` | 超级管理员生产密码 |
+| `ENCRYPTION_KEY` | 32 字节 Base64 密钥，用于加密 AI API Key |
+
+配置一次后，日常更新流程就是：
+
+```bash
+git add -A
+git commit -m "feat: describe your change"
+git push origin main
+```
+
+可以在 GitHub 仓库的 **Actions → Deploy ModernNovel** 查看部署进度，或通过 `workflow_dispatch` 手动重新部署。生产地址保持不变：
+
+```text
+https://modernnovel.zongyangpolo.workers.dev
+```
+
+#### 本地手动部署
+
+如果暂时不使用 GitHub Actions：
+
+```bash
+git pull --rebase
+bun install
+bun run test
+bun run check-types
+bunx wrangler --cwd apps/server d1 migrations apply DB --remote
+bun run build:web
+bunx wrangler --cwd apps/server deploy
+curl --fail https://modernnovel.zongyangpolo.workers.dev/api/health
+```
+
+不要在每次部署时重新生成 `ENCRYPTION_KEY`。更换它会导致 D1 中已有的 AI API Key 无法解密。
 
 ### Cloudflare 中的数据位置
 
