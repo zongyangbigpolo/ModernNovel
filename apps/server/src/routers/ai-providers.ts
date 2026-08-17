@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import { db } from "../db"
 import { aiProvider } from "../db/schema"
@@ -141,12 +141,16 @@ aiProvidersRouter.post("/", async (c: Context<{ Bindings: Env; Variables: Variab
       )
     }
 
-    // If this should be the default, unset other defaults for this provider type
-    if (isDefault) {
-      await db
-        .update(aiProvider)
-        .set({ isDefault: false })
-        .where(and(eq(aiProvider.userId, user.id), eq(aiProvider.provider, provider)))
+    const existingDefault = await db
+      .select({ id: aiProvider.id })
+      .from(aiProvider)
+      .where(and(eq(aiProvider.userId, user.id), eq(aiProvider.isDefault, true)))
+      .limit(1)
+      .get()
+    const shouldBeDefault = isDefault || !existingDefault
+
+    if (shouldBeDefault) {
+      await db.update(aiProvider).set({ isDefault: false }).where(eq(aiProvider.userId, user.id))
     }
 
     const id = crypto.randomUUID()
@@ -169,7 +173,7 @@ aiProvidersRouter.post("/", async (c: Context<{ Bindings: Env; Variables: Variab
       keyHash: apiKeyHash, // Empty for Ollama
       providerUserId: providerUserId || null,
       isActive: true,
-      isDefault,
+      isDefault: shouldBeDefault,
       usageLimit: usageLimit || null,
       currentUsage: 0,
       supportedModels: supportedModels ? JSON.stringify(supportedModels) : null,
@@ -197,23 +201,19 @@ aiProvidersRouter.put("/:id", async (c: Context<{ Bindings: Env; Variables: Vari
     const body = await c.req.json()
     const { keyLabel, isActive, isDefault, usageLimit, supportedModels, providerConfig } = body
 
-    // If this should be the default, unset other defaults for this provider type
-    if (isDefault) {
-      const existingProvider = await db
-        .select({ provider: aiProvider.provider })
-        .from(aiProvider)
-        .where(and(eq(aiProvider.id, providerId), eq(aiProvider.userId, user.id)))
-        .limit(1)
-        .get()
+    const existingProvider = await db
+      .select({ id: aiProvider.id })
+      .from(aiProvider)
+      .where(and(eq(aiProvider.id, providerId), eq(aiProvider.userId, user.id)))
+      .limit(1)
+      .get()
 
-      if (existingProvider) {
-        await db
-          .update(aiProvider)
-          .set({ isDefault: false })
-          .where(
-            and(eq(aiProvider.userId, user.id), eq(aiProvider.provider, existingProvider.provider))
-          )
-      }
+    if (!existingProvider) {
+      return c.json({ error: "AI provider not found" }, 404)
+    }
+
+    if (isDefault) {
+      await db.update(aiProvider).set({ isDefault: false }).where(eq(aiProvider.userId, user.id))
     }
 
     await db
@@ -245,9 +245,37 @@ aiProvidersRouter.delete("/:id", async (c: Context<{ Bindings: Env; Variables: V
   }
 
   try {
+    const provider = await db
+      .select({ isDefault: aiProvider.isDefault })
+      .from(aiProvider)
+      .where(and(eq(aiProvider.id, providerId), eq(aiProvider.userId, user.id)))
+      .limit(1)
+      .get()
+
+    if (!provider) {
+      return c.json({ error: "AI provider not found" }, 404)
+    }
+
     await db
       .delete(aiProvider)
       .where(and(eq(aiProvider.id, providerId), eq(aiProvider.userId, user.id)))
+
+    if (provider.isDefault) {
+      const nextProvider = await db
+        .select({ id: aiProvider.id })
+        .from(aiProvider)
+        .where(and(eq(aiProvider.userId, user.id), eq(aiProvider.isActive, true)))
+        .orderBy(asc(aiProvider.createdAt))
+        .limit(1)
+        .get()
+
+      if (nextProvider) {
+        await db
+          .update(aiProvider)
+          .set({ isDefault: true, updatedAt: new Date() })
+          .where(eq(aiProvider.id, nextProvider.id))
+      }
+    }
 
     return c.json({ success: true })
   } catch {

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { CheckCircle, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, CheckCircle, Cpu, Plus, Settings2, Sparkles, Trash2 } from "lucide-react"
 
 // Reusable success icon for toast notifications
 const successIcon = <CheckCircle className="h-4 w-4" />
@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { OllamaSetup } from "@/components/ollama-setup"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -29,20 +30,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { aiProvidersApi, type ProviderId } from "@/lib/api/ai-providers"
+  aiProvidersApi,
+  type AiProvider as ConnectedAIProvider,
+  type ProviderId,
+} from "@/lib/api/ai-providers"
 import { useI18n } from "@/lib/i18n"
 import { buildAuthURL, generatePKCEParams } from "@/lib/pkce"
 
 interface AIProvider {
   apiUrl?: string
+  category: "china" | "global" | "local"
   defaultModel: string
   description: string
   enabled: boolean
@@ -81,6 +80,8 @@ interface ProviderFormProps {
 
 function AIProvidersPage() {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null)
+  const [addProviderOpen, setAddProviderOpen] = useState(false)
+  const [editingProviderId, setEditingProviderId] = useState<string | null>(null)
   const [_oauthProcessing, setOauthProcessing] = useState(false)
   const queryClient = useQueryClient()
   const { t } = useI18n()
@@ -105,6 +106,19 @@ function AIProvidersPage() {
     },
     onError: (deleteError: Error) => {
       toast.error(t("ai.settings.toasts.disconnectProviderError", { message: deleteError.message }))
+    },
+  })
+
+  const setDefaultMutation = useMutation({
+    mutationFn: (id: string) => aiProvidersApi.update(id, { isDefault: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
+      toast.success(t("ai.settings.toasts.defaultProviderUpdated"))
+    },
+    onError: (updateError: Error) => {
+      toast.error(
+        t("ai.settings.toasts.defaultProviderUpdateFailed", { message: updateError.message })
+      )
     },
   })
 
@@ -202,6 +216,7 @@ function AIProvidersPage() {
     () => [
       {
         id: "openrouter",
+        category: "global",
         name: "OpenRouter",
         description: t("ai.settings.providers.openrouterDescription"),
         defaultModel: "openrouter/auto",
@@ -212,36 +227,43 @@ function AIProvidersPage() {
       },
       {
         id: "kimi",
+        category: "china",
         name: "Kimi / Moonshot AI",
         description: t("ai.settings.providers.kimiDescription"),
         apiUrl: "https://api.moonshot.cn/v1",
         defaultModel: "kimi-k3",
         models: ["kimi-k3", "kimi-k2.6", "kimi-k2.7-code-highspeed"],
+        recommended: true,
         enabled: true,
         supportsPKCE: false,
       },
       {
         id: "deepseek",
+        category: "china",
         name: "DeepSeek",
         description: t("ai.settings.providers.deepseekDescription"),
         apiUrl: "https://api.deepseek.com",
         defaultModel: "deepseek-v4-pro",
         models: ["deepseek-v4-pro", "deepseek-v4-flash"],
+        recommended: true,
         enabled: true,
         supportsPKCE: false,
       },
       {
         id: "qwen",
+        category: "china",
         name: "通义千问 / Qwen",
         description: t("ai.settings.providers.qwenDescription"),
         apiUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
         defaultModel: "qwen3.8-max",
         models: ["qwen3.8-max", "qwen3.7-plus", "qwen3.7-flash"],
+        recommended: true,
         enabled: true,
         supportsPKCE: false,
       },
       {
         id: "minimax",
+        category: "china",
         name: "MiniMax",
         description: t("ai.settings.providers.minimaxDescription"),
         apiUrl: "https://api.minimaxi.com/v1",
@@ -252,6 +274,7 @@ function AIProvidersPage() {
       },
       {
         id: "openai",
+        category: "global",
         name: "OpenAI",
         description: t("ai.settings.providers.openaiDescription"),
         apiUrl: "https://api.openai.com/v1",
@@ -262,6 +285,7 @@ function AIProvidersPage() {
       },
       {
         id: "anthropic",
+        category: "global",
         name: "Anthropic",
         description: t("ai.settings.providers.anthropicDescription"),
         defaultModel: "claude-sonnet-5",
@@ -271,6 +295,7 @@ function AIProvidersPage() {
       },
       {
         id: "gemini",
+        category: "global",
         name: "Google Gemini",
         description: t("ai.settings.providers.geminiDescription"),
         apiUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
@@ -286,6 +311,7 @@ function AIProvidersPage() {
       },
       {
         id: "ollama",
+        category: "local",
         name: "Ollama",
         description: t("ai.settings.providers.ollamaDescription"),
         apiUrl: "http://localhost:11434",
@@ -309,188 +335,402 @@ function AIProvidersPage() {
     [providers]
   )
 
+  const connectedProviders = providers ?? []
+  const defaultProvider =
+    connectedProviders.find((provider) => provider.isDefault) ?? connectedProviders.at(0)
+  const defaultProviderData = defaultProvider
+    ? providersMap.get(defaultProvider.provider)
+    : undefined
+  const unconnectedProviders = availableProviders.filter(
+    (provider) => provider.enabled && !getConnectedProvider(provider.id)
+  )
+  const editingProvider = connectedProviders.find((provider) => provider.id === editingProviderId)
+
   return (
-    <div className="container mx-auto space-y-6 p-6">
-      <div className="space-y-2">
-        <h1 className="font-bold text-2xl sm:text-3xl">{t("ai.settings.title")}</h1>
-        <p className="text-muted-foreground text-sm sm:text-base">{t("ai.settings.description")}</p>
+    <div className="container mx-auto max-w-5xl space-y-8 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="font-bold text-2xl sm:text-3xl">{t("ai.settings.title")}</h1>
+          <p className="max-w-2xl text-muted-foreground text-sm sm:text-base">
+            {t("ai.settings.description")}
+          </p>
+        </div>
+        <Dialog
+          onOpenChange={(open) => {
+            setAddProviderOpen(open)
+            if (!open) {
+              setSelectedProviderId(null)
+            }
+          }}
+          open={addProviderOpen}
+        >
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("ai.settings.addProvider")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedProviderId
+                  ? t("ai.settings.connectDialogTitle", {
+                      provider: providersMap.get(selectedProviderId as ProviderId)?.name ?? "",
+                    })
+                  : t("ai.settings.addProvider")}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedProviderId
+                  ? t("ai.settings.connectDialogDescription", {
+                      provider: providersMap.get(selectedProviderId as ProviderId)?.name ?? "",
+                    })
+                  : t("ai.settings.addProviderDescription")}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedProviderId ? (
+              <div className="space-y-4">
+                <Button
+                  className="px-0"
+                  onClick={() => setSelectedProviderId(null)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {t("common.back")}
+                </Button>
+                <AddProviderForm
+                  availableProviders={availableProviders.filter(
+                    (provider) => provider.id === selectedProviderId
+                  )}
+                  onSuccess={() => {
+                    setSelectedProviderId(null)
+                    setAddProviderOpen(false)
+                    queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
+                  }}
+                  preSelectedProviderId={selectedProviderId}
+                />
+              </div>
+            ) : (
+              <ProviderCatalog onSelect={setSelectedProviderId} providers={unconnectedProviders} />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {providers && providers.length > 0 && (
+      {providers === undefined && (
         <div className="space-y-4">
-          <h2 className="font-semibold text-lg sm:text-xl">
-            {t("ai.settings.connectedProviders")}
-          </h2>
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-32">{t("ai.settings.table.provider")}</TableHead>
-                  <TableHead className="min-w-48">{t("common.description")}</TableHead>
-                  <TableHead className="w-24">{t("common.status")}</TableHead>
-                  <TableHead className="w-16 text-right">
-                    {t("ai.settings.table.actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {providers.map((provider) => {
-                  const providerData = providersMap.get(provider.provider)
-                  return (
-                    <TableRow key={provider.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {providerData?.name || provider.provider}
-                          </span>
-                          {providerData?.recommended && (
-                            <Badge className="text-xs" variant="secondary">
-                              {t("ai.settings.recommendedBadge")}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        <div>
-                          {providerData?.description || t("ai.settings.providerFallback")}
-                          {typeof provider.providerConfig?.defaultModel === "string" && (
-                            <div className="mt-1 font-mono text-xs">
-                              {t("ai.settings.configuredModel", {
-                                model: provider.providerConfig.defaultModel,
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="text-xs" variant="default">
-                          {t("ai.settings.connectedBadge")}
+          <Skeleton className="h-44 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+      )}
+
+      {providers !== undefined && defaultProvider && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="font-medium text-sm">{t("ai.settings.currentDefault")}</span>
+                </div>
+                <CardTitle>{defaultProviderData?.name ?? defaultProvider.provider}</CardTitle>
+                <CardDescription className="font-mono">
+                  {getConfiguredModel(defaultProvider, defaultProviderData)}
+                </CardDescription>
+              </div>
+              <Badge>{t("ai.settings.activeBadge")}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setEditingProviderId(defaultProvider.id)} variant="outline">
+              <Settings2 className="mr-2 h-4 w-4" />
+              {t("ai.settings.editModel")}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {providers !== undefined && !defaultProvider && (
+        <Card className="border-dashed">
+          <CardHeader className="items-center text-center">
+            <div className="rounded-full bg-primary/10 p-3 text-primary">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <CardTitle>{t("ai.settings.emptyTitle")}</CardTitle>
+            <CardDescription className="max-w-lg">
+              {t("ai.settings.emptyDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button onClick={() => setAddProviderOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("ai.settings.addProvider")}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {connectedProviders.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="font-semibold text-lg sm:text-xl">
+              {t("ai.settings.connectedProviders")}
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {t("ai.settings.connectedProvidersDescription")}
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {connectedProviders.map((provider) => {
+              const providerData = providersMap.get(provider.provider)
+              const isDefault = provider.id === defaultProvider?.id
+              return (
+                <Card key={provider.id}>
+                  <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">
+                          {providerData?.name ?? provider.provider}
+                        </span>
+                        <Badge variant={isDefault ? "default" : "outline"}>
+                          {isDefault
+                            ? t("ai.settings.defaultBadge")
+                            : t("ai.settings.connectedBadge")}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <ConfirmDialog
-                          confirmText={t("common.delete")}
-                          description={t("ai.settings.deleteDialogDescription")}
-                          onConfirm={() => deleteMutation.mutate(provider.id)}
-                          title={t("ai.settings.deleteDialogTitle")}
-                          variant="destructive"
+                      </div>
+                      <p className="truncate font-mono text-muted-foreground text-sm">
+                        {getConfiguredModel(provider, providerData)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {!isDefault && (
+                        <Button
+                          disabled={setDefaultMutation.isPending}
+                          onClick={() => setDefaultMutation.mutate(provider.id)}
+                          size="sm"
+                          variant="outline"
                         >
-                          <Button className="h-6 px-2 text-xs" variant="destructive">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </ConfirmDialog>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                          {t("ai.settings.setDefault")}
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => setEditingProviderId(provider.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Settings2 className="mr-2 h-4 w-4" />
+                        {t("common.edit")}
+                      </Button>
+                      <ConfirmDialog
+                        confirmText={t("common.delete")}
+                        description={t("ai.settings.deleteDialogDescription")}
+                        onConfirm={() => deleteMutation.mutate(provider.id)}
+                        title={t("ai.settings.deleteDialogTitle")}
+                        variant="destructive"
+                      >
+                        <Button aria-label={t("common.delete")} size="icon" variant="ghost">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </ConfirmDialog>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {availableProviders.some((p) => p.enabled) && (
-        <div className="space-y-4">
-          <h2 className="font-semibold text-lg sm:text-xl">
-            {t("ai.settings.availableProviders")}
-          </h2>
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-32">{t("ai.settings.table.provider")}</TableHead>
-                  <TableHead className="min-w-48">{t("common.description")}</TableHead>
-                  <TableHead className="w-24">{t("common.status")}</TableHead>
-                  <TableHead className="w-16 text-right">
-                    {t("ai.settings.table.actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {availableProviders
-                  .filter((p) => p.enabled && !getConnectedProvider(p.id)) // Only show non-connected providers
-                  .sort((a, b) => {
-                    // Sort by recommended status first, then alphabetically
-                    if (a.recommended && !b.recommended) {
-                      return -1
-                    }
-                    if (!a.recommended && b.recommended) {
-                      return 1
-                    }
+      {editingProvider && (
+        <EditProviderModelDialog
+          definition={providersMap.get(editingProvider.provider)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingProviderId(null)
+            }
+          }}
+          onSuccess={() => {
+            setEditingProviderId(null)
+            queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
+          }}
+          open={editingProviderId !== null}
+          provider={editingProvider}
+        />
+      )}
+    </div>
+  )
+}
 
-                    // Finally alphabetically
-                    return a.name.localeCompare(b.name)
-                  })
-                  .map((provider) => (
-                    <TableRow key={provider.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{provider.name}</span>
-                          {provider.recommended && (
-                            <Badge className="text-xs" variant="secondary">
-                              {t("ai.settings.recommendedBadge")}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {provider.description}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="text-xs" variant="outline">
-                          {t("ai.settings.availableBadge")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              aria-label={t("ai.settings.connectDialogTitle", {
-                                provider: provider.name,
-                              })}
-                              className="h-6 px-2 text-xs"
-                              onClick={() => setSelectedProviderId(provider.id)}
-                              variant="default"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>
-                                {t("ai.settings.connectDialogTitle", { provider: provider.name })}
-                              </DialogTitle>
-                              <DialogDescription>
-                                {t("ai.settings.connectDialogDescription", {
-                                  provider: provider.name,
-                                })}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="max-h-[calc(90vh-8rem)] overflow-y-auto pr-2">
-                              {selectedProviderId === provider.id && (
-                                <AddProviderForm
-                                  availableProviders={[provider].filter((p) => p.enabled)}
-                                  onSuccess={() => {
-                                    setSelectedProviderId(null)
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["ai-providers"],
-                                    })
-                                  }}
-                                  preSelectedProviderId={provider.id}
-                                />
-                              )}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
+function getConfiguredModel(
+  provider: ConnectedAIProvider,
+  definition: AIProvider | undefined
+): string {
+  const configuredModel = provider.providerConfig?.defaultModel
+  return typeof configuredModel === "string" && configuredModel
+    ? configuredModel
+    : (definition?.defaultModel ?? provider.provider)
+}
+
+function ProviderCatalog({
+  providers,
+  onSelect,
+}: {
+  providers: AIProvider[]
+  onSelect: (providerId: string) => void
+}) {
+  const { t } = useI18n()
+  const [category, setCategory] = useState<"recommended" | AIProvider["category"]>("recommended")
+  const categories = [
+    { id: "recommended" as const, label: t("ai.settings.categories.recommended") },
+    { id: "china" as const, label: t("ai.settings.categories.china") },
+    { id: "global" as const, label: t("ai.settings.categories.global") },
+    { id: "local" as const, label: t("ai.settings.categories.local") },
+  ]
+  const filteredProviders = providers.filter((provider) =>
+    category === "recommended" ? provider.recommended : provider.category === category
+  )
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {categories.map((item) => (
+          <Button
+            key={item.id}
+            onClick={() => setCategory(item.id)}
+            size="sm"
+            variant={category === item.id ? "default" : "outline"}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </div>
+
+      {category === "local" && (
+        <div className="flex gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+          <Cpu className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p>{t("ai.settings.ollamaCloudflareNotice")}</p>
+        </div>
+      )}
+
+      {filteredProviders.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {filteredProviders.map((provider) => (
+            <button
+              className="rounded-lg border p-4 text-left transition-colors hover:border-primary hover:bg-muted/50"
+              key={provider.id}
+              onClick={() => onSelect(provider.id)}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{provider.name}</span>
+                    {provider.recommended && (
+                      <Badge variant="secondary">{t("ai.settings.recommendedBadge")}</Badge>
+                    )}
+                  </div>
+                  <p className="mt-2 text-muted-foreground text-sm">{provider.description}</p>
+                </div>
+                <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground text-sm">
+          {t("ai.settings.categoryEmpty")}
         </div>
       )}
     </div>
+  )
+}
+
+function EditProviderModelDialog({
+  provider,
+  definition,
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  provider: ConnectedAIProvider
+  definition: AIProvider | undefined
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: () => void
+}) {
+  const { t } = useI18n()
+  const [model, setModel] = useState(() => getConfiguredModel(provider, definition))
+  const mutation = useMutation({
+    mutationFn: () =>
+      aiProvidersApi.update(provider.id, {
+        providerConfig: {
+          ...provider.providerConfig,
+          defaultModel: model.trim(),
+        },
+      }),
+    onSuccess: () => {
+      toast.success(t("ai.settings.toasts.modelUpdated"))
+      onSuccess()
+    },
+    onError: (updateError: Error) => {
+      toast.error(t("ai.settings.toasts.modelUpdateFailed", { message: updateError.message }))
+    },
+  })
+
+  useEffect(() => {
+    setModel(getConfiguredModel(provider, definition))
+  }, [provider, definition])
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("ai.settings.editModelTitle", {
+              provider: definition?.name ?? provider.provider,
+            })}
+          </DialogTitle>
+          <DialogDescription>{t("ai.settings.editModelDescription")}</DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (model.trim()) {
+              mutation.mutate()
+            }
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="edit-default-model">{t("ai.settings.defaultModelLabel")}</Label>
+            <Input
+              id="edit-default-model"
+              list="edit-provider-models"
+              onChange={(event) => setModel(event.target.value)}
+              value={model}
+            />
+            <datalist id="edit-provider-models">
+              {definition?.models.map((availableModel) => (
+                <option key={availableModel} value={availableModel} />
+              ))}
+            </datalist>
+            {definition && (
+              <p className="text-muted-foreground text-xs">
+                {t("ai.settings.defaultModelHint", { models: definition.models.join(", ") })}
+              </p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+              {t("common.cancel")}
+            </Button>
+            <Button disabled={!model.trim() || mutation.isPending} type="submit">
+              {mutation.isPending ? t("common.saving") : t("common.save")}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

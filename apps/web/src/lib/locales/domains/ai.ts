@@ -3,7 +3,31 @@ import type { Locale } from "@/lib/i18n"
 export const ai: Record<Locale, Record<string, string>> = {
   en: {
     "ai.settings.title": "AI Providers",
-    "ai.settings.description": "Connect your AI providers to start generating content",
+    "ai.settings.description":
+      "Choose one default model for writing. Add more providers only when you need alternatives.",
+    "ai.settings.addProvider": "Add AI service",
+    "ai.settings.addProviderDescription":
+      "Choose a provider category, then enter only the connection details it requires.",
+    "ai.settings.currentDefault": "Current default model",
+    "ai.settings.activeBadge": "Active",
+    "ai.settings.defaultBadge": "Default",
+    "ai.settings.editModel": "Change model",
+    "ai.settings.editModelTitle": "Configure {{provider}} model",
+    "ai.settings.editModelDescription":
+      "Choose the model used when this provider is selected for writing.",
+    "ai.settings.setDefault": "Set as default",
+    "ai.settings.emptyTitle": "Connect your first AI service",
+    "ai.settings.emptyDescription":
+      "For the simplest setup, start with DeepSeek or Kimi and paste an API key.",
+    "ai.settings.connectedProvidersDescription":
+      "Only the default provider is used automatically. Keep alternatives here for quick switching.",
+    "ai.settings.categories.recommended": "Recommended",
+    "ai.settings.categories.china": "China",
+    "ai.settings.categories.global": "Global",
+    "ai.settings.categories.local": "Local / Advanced",
+    "ai.settings.categoryEmpty": "All services in this category are already connected.",
+    "ai.settings.ollamaCloudflareNotice":
+      "A Cloudflare deployment cannot reach Ollama at localhost:11434 on your computer. Use a public HTTPS endpoint or Cloudflare Tunnel.",
     "ai.settings.connectedProviders": "Connected Providers",
     "ai.settings.availableProviders": "Available Providers",
     "ai.settings.table.provider": "Provider",
@@ -28,6 +52,11 @@ export const ai: Record<Locale, Record<string, string>> = {
     "ai.settings.toasts.oauthInitiateFailed": "Failed to initiate OAuth",
     "ai.settings.toasts.providerConnected": "{{provider}} connected successfully",
     "ai.settings.toasts.connectProviderFailed": "Failed to connect provider",
+    "ai.settings.toasts.defaultProviderUpdated": "Default provider updated",
+    "ai.settings.toasts.defaultProviderUpdateFailed":
+      "Failed to update the default provider: {{message}}",
+    "ai.settings.toasts.modelUpdated": "Default model updated",
+    "ai.settings.toasts.modelUpdateFailed": "Failed to update the model: {{message}}",
     "ai.settings.toasts.ollamaConnected": "Ollama connected successfully",
     "ai.settings.toasts.ollamaConnectFailed": "Failed to connect Ollama: {{message}}",
     "ai.settings.providers.openrouterDescription": "Access 200+ models through one API",
@@ -44,7 +73,8 @@ export const ai: Record<Locale, Record<string, string>> = {
       "Qwen 3.8 Max, 3.7 Plus, and 3.7 Flash through Alibaba Cloud Model Studio",
     "ai.settings.providers.minimaxDescription":
       "MiniMax M3, M2.7, and high-speed models; supports China and international endpoints",
-    "ai.settings.providers.ollamaDescription": "Run models locally on your device",
+    "ai.settings.providers.ollamaDescription":
+      "Connect a self-hosted Ollama instance through a public HTTPS endpoint",
     "ai.settings.selectProviderLabel": "Select Provider",
     "ai.settings.selectProviderPlaceholder": "Choose an AI provider",
     "ai.settings.connectingToProviderLabel": "Connecting to Provider",
@@ -130,7 +160,27 @@ export const ai: Record<Locale, Record<string, string>> = {
   },
   "zh-CN": {
     "ai.settings.title": "AI 提供商",
-    "ai.settings.description": "连接你的 AI 提供商后即可开始生成内容",
+    "ai.settings.description": "选择一个默认写作模型；只有需要备用方案时，再连接其他服务。",
+    "ai.settings.addProvider": "添加 AI 服务",
+    "ai.settings.addProviderDescription": "先选择服务分类，再填写该服务所需的连接信息。",
+    "ai.settings.currentDefault": "当前默认模型",
+    "ai.settings.activeBadge": "使用中",
+    "ai.settings.defaultBadge": "默认",
+    "ai.settings.editModel": "更换模型",
+    "ai.settings.editModelTitle": "配置 {{provider}} 模型",
+    "ai.settings.editModelDescription": "选择该服务用于小说写作的模型。",
+    "ai.settings.setDefault": "设为默认",
+    "ai.settings.emptyTitle": "连接第一个 AI 服务",
+    "ai.settings.emptyDescription": "首次使用推荐选择 DeepSeek 或 Kimi，填写 API Key 即可。",
+    "ai.settings.connectedProvidersDescription":
+      "系统只会自动使用默认服务，其他服务保留为快速切换的备用方案。",
+    "ai.settings.categories.recommended": "推荐",
+    "ai.settings.categories.china": "国内服务",
+    "ai.settings.categories.global": "海外服务",
+    "ai.settings.categories.local": "本地 / 高级",
+    "ai.settings.categoryEmpty": "这个分类中的服务都已经连接。",
+    "ai.settings.ollamaCloudflareNotice":
+      "Cloudflare 部署无法访问你电脑上的 localhost:11434。请使用公网 HTTPS 地址或 Cloudflare Tunnel。",
     "ai.settings.connectedProviders": "已连接的提供商",
     "ai.settings.availableProviders": "可用提供商",
     "ai.settings.table.provider": "提供商",
@@ -154,6 +204,10 @@ export const ai: Record<Locale, Record<string, string>> = {
     "ai.settings.toasts.oauthInitiateFailed": "启动 OAuth 失败",
     "ai.settings.toasts.providerConnected": "{{provider}} 连接成功",
     "ai.settings.toasts.connectProviderFailed": "连接提供商失败",
+    "ai.settings.toasts.defaultProviderUpdated": "默认服务已更新",
+    "ai.settings.toasts.defaultProviderUpdateFailed": "更新默认服务失败：{{message}}",
+    "ai.settings.toasts.modelUpdated": "默认模型已更新",
+    "ai.settings.toasts.modelUpdateFailed": "更新模型失败：{{message}}",
     "ai.settings.toasts.ollamaConnected": "Ollama 连接成功",
     "ai.settings.toasts.ollamaConnectFailed": "连接 Ollama 失败：{{message}}",
     "ai.settings.providers.openrouterDescription": "通过一个 API 访问 200+ 个模型",
@@ -168,7 +222,7 @@ export const ai: Record<Locale, Record<string, string>> = {
     "ai.settings.providers.qwenDescription":
       "通过阿里云百炼使用 Qwen 3.8 Max、3.7 Plus 与 3.7 Flash",
     "ai.settings.providers.minimaxDescription": "MiniMax M3、M2.7 与高速模型，支持国内站和国际站",
-    "ai.settings.providers.ollamaDescription": "在你的设备上本地运行模型",
+    "ai.settings.providers.ollamaDescription": "通过公网 HTTPS 地址连接自行托管的 Ollama",
     "ai.settings.selectProviderLabel": "选择提供商",
     "ai.settings.selectProviderPlaceholder": "选择一个 AI 提供商",
     "ai.settings.connectingToProviderLabel": "正在连接提供商",
