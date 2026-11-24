@@ -25,4 +25,12 @@ describe("countWordsInHtml", () => {
   it("collapses repeated whitespace", () => {
     expect(countWordsInHtml("<p>one   two\n\nthree</p>")).toBe(3)
   })
+
+  it("counts each Chinese character and ignores full-width punctuation", () => {
+    expect(countWordsInHtml("<p>夜雨落在长安城，沈砚撑伞。</p>")).toBe(11)
+  })
+
+  it("counts mixed Chinese and English text", () => {
+    expect(countWordsInHtml("<p>使用 AI 助手写作</p>")).toBe(7)
+  })
 })
