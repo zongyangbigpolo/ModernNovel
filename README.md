@@ -596,6 +596,13 @@ bun check-types
 bun lint
 ```
 
+## 版本与版权
+
+- 当前版本：**V1.0.0**（见 [CHANGELOG.md](CHANGELOG.md)），前端首页页脚与 `/health` 接口均显示该版本号。
+- 麻豆小说基于开源项目 [OpenWrite](https://github.com/ilrein/openwrite)（© OpenWrite Contributors，AGPL-3.0）二次开发。上游的项目、章节编辑、Codex 设定库、Story Canvas 和 AI 对话等基础能力版权归原作者所有。
+- 麻豆小说新增和改写的部分包括：Writer Skills 作者技巧与持久风格记忆、中英文界面与语言切换、Workspace 切换与团队权限页、超级管理员后台、项目设置页、国产模型 Provider 配置与简化的 AI 设置流程，以及 Cloudflare 生产部署流水线。这些部分 © 2026 麻豆小说作者。
+- 整个项目继续以 AGPL-3.0 发布；修改和部署本项目时，请保留上述版权声明并按许可证提供源代码。
+
 ## License
 
 [AGPL-3.0](LICENSE.md)

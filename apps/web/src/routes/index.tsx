@@ -5,6 +5,13 @@ import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Logo } from "@/components/ui/logo"
+import {
+  APP_COPYRIGHT_YEAR,
+  APP_NAME,
+  APP_NAME_EN,
+  APP_VERSION,
+  UPSTREAM_PROJECT_URL,
+} from "@/lib/app-info"
 import { useI18n } from "@/lib/i18n"
 
 export const Route = createFileRoute("/")({
@@ -92,6 +99,33 @@ function HomeComponent() {
           </CardHeader>
         </Card>
       </section>
+
+      <footer className="flex flex-col items-center gap-1 border-t pt-6 pb-2 text-center text-muted-foreground text-xs">
+        <p>
+          © {APP_COPYRIGHT_YEAR} {APP_NAME}（{APP_NAME_EN}） V{APP_VERSION}
+        </p>
+        <p>
+          {t("landing.footer.basedOn")}{" "}
+          <a
+            className="underline underline-offset-2"
+            href={UPSTREAM_PROJECT_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            OpenWrite
+          </a>{" "}
+          · AGPL-3.0
+        </p>
+        <p>
+          <Link className="underline underline-offset-2" to="/terms">
+            {t("auth.loginBlock.termsOfService")}
+          </Link>{" "}
+          ·{" "}
+          <Link className="underline underline-offset-2" to="/privacy">
+            {t("auth.loginBlock.privacyPolicy")}
+          </Link>
+        </p>
+      </footer>
     </main>
   )
 }

@@ -17,6 +17,7 @@ export const auth: Record<Locale, Record<string, string>> = {
     "landing.features.collaboration.title": "Share a workspace",
     "landing.features.collaboration.description":
       "Invite collaborators and control who can manage your work.",
+    "landing.footer.basedOn": "Built on the open-source project",
 
     "auth.signUp": "Sign up",
     "auth.fields.email": "Email",
@@ -93,6 +94,7 @@ export const auth: Record<Locale, Record<string, string>> = {
     "landing.features.ai.description": "在浏览器中连接托管服务提供商或本地 Ollama 实例。",
     "landing.features.collaboration.title": "共享工作空间",
     "landing.features.collaboration.description": "邀请协作者，并控制谁可以管理你的作品。",
+    "landing.footer.basedOn": "基于开源项目",
 
     "auth.signUp": "注册",
     "auth.fields.email": "邮箱",
