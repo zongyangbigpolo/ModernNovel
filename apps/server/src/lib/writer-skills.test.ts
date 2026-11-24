@@ -19,6 +19,18 @@ import {
 const GITHUB_HTTPS_URL_PATTERN = /^https:\/\/github\.com\//
 
 describe("parseSkillMarkdown", () => {
+  it("accepts the Chinese section headings used by the zh-CN import placeholder", () => {
+    const result = parseSkillMarkdown(
+      "# 伏笔回收\n回收前文埋下的线索。\n\n## 说明\n每章结束前检查未回收的伏笔。\n\n## 检查清单\n- 列出本章新埋的伏笔\n- 标记已回收的伏笔"
+    )
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.skill.name).toBe("伏笔回收")
+      expect(result.skill.instructions).toBe("每章结束前检查未回收的伏笔。")
+      expect(result.skill.checklist).toEqual(["列出本章新埋的伏笔", "标记已回收的伏笔"])
+    }
+  })
+
   it("parses a well-formed markdown skill", () => {
     const result = parseSkillMarkdown(
       [

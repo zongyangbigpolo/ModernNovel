@@ -116,21 +116,21 @@ const SOURCE_LICENSE_LINE_PATTERN = /^(?:[-*]\s*)?license\s*:\s*(.+)$/i
 
 type MarkdownSectionName = "checklist" | "description" | "examples" | "instructions" | "source"
 
+// Chinese headings mirror the zh-CN import placeholder shown in the skills page
+const SECTION_HEADINGS: Record<string, MarkdownSectionName> = {
+  instructions: "instructions",
+  说明: "instructions",
+  checklist: "checklist",
+  检查清单: "checklist",
+  examples: "examples",
+  示例: "examples",
+  source: "source",
+  provenance: "source",
+  来源: "source",
+}
+
 function sectionNameFromHeading(heading: string): MarkdownSectionName | null {
-  const normalized = heading.trim().toLowerCase()
-  if (normalized === "instructions") {
-    return "instructions"
-  }
-  if (normalized === "checklist") {
-    return "checklist"
-  }
-  if (normalized === "examples") {
-    return "examples"
-  }
-  if (normalized === "source" || normalized === "provenance") {
-    return "source"
-  }
-  return null
+  return SECTION_HEADINGS[heading.trim().toLowerCase()] ?? null
 }
 
 export function parseSkillMarkdown(raw: string): SkillParseResult {
